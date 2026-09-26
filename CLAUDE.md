@@ -1,0 +1,37 @@
+# search-master 维护说明
+
+这个仓库本身就是 skill 目录（`SKILL.md` 在根目录）。给 agent 用的内容在 `SKILL.md` 和 `references/`；本文件只给维护这个 skill 的人看。术语见 `CONTEXT.md`。
+
+## 结构
+
+- `SKILL.md`：入口。路由表（平台 → 首选工具 → reference）、工具通则、硬规则、静默失败检查。控制在 100 行以内。
+- `references/<平台>.md`：每个平台一个文件，统一结构：路由表（需求 | 首选 | 备选 | 别用）→ 命令 → 返回什么 → 坑 → 本次验证。每个文件 200 行以内。
+- `references/workflow.md`：多源搜索流程（来源层、深度档位、五步、子 agent 写法）。
+- `scripts/bb.sh`：bb-browser 的唯一入口。有两种模式（adapter 和 eval），负责开和关自己的 tab、等页面加载、加全局锁、拒绝写操作。
+- `scripts/bili_subtitle.sh`：B站字幕。通过 `bb.sh eval` 执行，不自己管 tab。
+
+## 约定
+
+- 新脚本凡是要开 bb-browser tab，一律调用 `bb.sh eval`，不要再写一份开 tab、等加载、关 tab 的代码。
+- 结论要带标记：[实测]、[旧测]、[源码]、[UNKNOWN]。改路由必须有实测证据，并写进对应文件的"本次验证"。
+- reference 里的命令写完整路径 `C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/...`，方便直接复制。仓库搬家时要全局替换这个路径。
+- 改了某个平台的路由，要同步改 `SKILL.md` 路由表里的那一行。
+
+## 重新验证
+
+工具和网站都会变，每隔一段时间要重测一次：按平台分组开子 agent，每组读自己的 reference，把主路由和备选各跑一次，更新"本次验证"和日期。第一次完整验证是 2026-09-26，由 6 个子 agent 完成；更早的证据在 `../42_expert/搜索工具调研原始报告/`。
+
+## 已知待办
+
+- bb adapter 坏了或有 bug、需要写私有 adapter（放在 `~/.bb-browser/sites/`）的：
+  - `twitter/user`：字段全空。
+  - `github/repo`：stars 等字段全是 null。
+  - `sogou/weixin`：公众号名和时间字段错位。
+  - `zhihu/hot`：ID 精度丢失。
+  - `weibo/comments`：点赞数恒为 0。
+  - `npm/search`：version 为 null。
+  - `pypi/search`：静默返回 0 条。
+- B站字幕可以改写成私有 adapter `bilibili/subtitle`，取代 `bili_subtitle.sh`。
+- `Cannot find default execution context` 的根因还没查清，bb.sh 目前用全局锁规避。
+- exa 的 `web_search_advanced_exa` 没开启（能按日期和域名过滤），开启方法见 `../42_expert/搜索工具总览.md` §5.2。
+- 本机没有 Whisper，也没有 `GROQ_API_KEY`，没有字幕的音视频转不了文字。

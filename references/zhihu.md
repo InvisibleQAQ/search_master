@@ -5,7 +5,7 @@
 | 需求 | 首选 | 备选 | 别用 |
 |---|---|---|---|
 | 搜索并直接拿全文 | anysearch `social_media` + `type: zhihu`（摘要就是全文）[实测] | bb `zhihu/search`（1.5 秒，带赞同数和评论数，只有摘要）[实测] | exa 搜索（知乎覆盖很薄）[旧测]；feedgrab `zhihu-so`（没登录，0 条）[旧测] |
-| 读指定专栏文章 | bb 开 tab + eval `.Post-RichText` [实测] | feedgrab `<url>`（6 秒）[实测]；neo `run` [旧测] | exa fetch（新文章 `CRAWL_UNKNOWN_ERROR`）[实测]；anysearch `extract`（`extract_failed`）[旧测]；WebFetch（403）[旧测] |
+| 读指定专栏文章 | bb 开 tab + eval `.Post-RichText` [实测] | feedgrab `<url>`（6 秒）[实测]；neo（脚本见 `read-url.md`，2 篇新专栏全文都读到）[实测] | exa fetch（新文章 `CRAWL_UNKNOWN_ERROR`）[实测]；anysearch `extract`（`extract_failed`）[实测]；WebFetch（403）[旧测] |
 | 读指定回答 | bb 开回答页 + eval `.RichContent-inner` [实测] | anysearch `zhihu`（前提是这条回答能被搜出来） | bb `zhihu/question`（403，code 10003）[旧测] |
 | 一个问题下的多个回答 | bb 在知乎 tab 里同源 fetch `questions/<qid>/answers` [实测] | — | bb `zhihu/question`（403）[旧测] |
 | 评论 | bb 在知乎 tab 里同源 fetch `comment_v5` [实测] | — | 没有现成 adapter |
@@ -83,3 +83,4 @@ d=$(mktemp -d); cd "$d" && OUTPUT_DIR="$d/out" feedgrab 'https://zhuanlan.zhihu.
 - bb 同源 fetch：文章评论 200（1 条，totals 1）、回答评论 200（1 条）、问题下回答 200（2 条，totals 2），合计 0.9 秒。
 - exa fetch 专栏 1986357544051024545 → `CRAWL_UNKNOWN_ERROR`（前两次整批 `fetch failed`，第 3 次才拿到结果）。
 - feedgrab 专栏 1986357544051024545 → 6 秒，24,236 字符 Markdown。
+- 新专栏 2086494817098396427、2085007317200790369：exa 都是 `CRAWL_UNKNOWN_ERROR`；anysearch `extract` 测了第一篇，`extract_failed`；neo（`read-url.md` 的脚本）全文 17,627 / 20,222 字，读的时候是登录状态。

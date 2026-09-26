@@ -4,11 +4,13 @@
 
 ## 结构
 
-- `SKILL.md`：入口。"谁来搜"（主 agent 只派搜索子 agent，不自己调工具）和派子 agent 的提示模板、路由表（平台 → 首选工具 → reference）、工具通则、硬规则、静默失败检查。前两块给主 agent 看，后面给搜索子 agent 看。控制在 100 行以内，现在 98 行，再加内容就把后面三块挪进 `references/`。
+- `SKILL.md`：入口。"谁来搜"（主 agent 只派搜索子 agent，不自己调工具）和派子 agent 的提示模板、路由表（平台 → 首选工具 → reference）、工具通则、硬规则、静默失败检查。前两块给主 agent 看，后面给搜索子 agent 看。控制在 100 行以内，现在 99 行，再加内容就把后面三块挪进 `references/`。
 - `references/<平台>.md`：每个平台一个文件，统一结构：路由表（需求 | 首选 | 备选 | 别用）→ 命令 → 返回什么 → 坑 → 本次验证。每个文件 200 行以内。
+- `references/read-url.md`：给一个 URL 拿正文，以及"读不到就交给 neo"：什么算读不到、neo 的读取脚本、返回格式。各平台 reference 读全文失败时都落到这里。原来在 `web.md` 里，因为 `web.md` 到了 200 行上限才拆出来。
 - `references/workflow.md`：多源搜索流程（来源层、深度档位、五步里主 agent 和子 agent 的分工、bb 和 neo 的并发限制）。
 - `scripts/bb.sh`：bb-browser 的唯一入口。有两种模式（adapter 和 eval），负责开和关自己的 tab、等页面加载、加全局锁、拒绝写操作。
 - `scripts/bili_subtitle.sh`：B站字幕。通过 `bb.sh eval` 执行，不自己管 tab。
+- `scripts/notify.py`：用 Server酱 推送提醒到用户手机，要用户动手时用（在 neo 里登录、过验证、启动 neo）。SendKey 从 `%USERPROFILE%\.codex\serverchan-notifier.env` 读（一行 `SERVERCHAN_SENDKEY=<key>`），不进仓库。
 
 ## 约定
 
@@ -17,6 +19,8 @@
 - 结论要带标记：[实测]、[旧测]、[源码]、[UNKNOWN]。改路由必须有实测证据，并写进对应文件的"本次验证"。
 - reference 里的命令写完整路径 `C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/...`，方便直接复制。仓库搬家时要全局替换这个路径。
 - 改了某个平台的路由，要同步改 `SKILL.md` 路由表里的那一行。
+- 密钥（Server酱 SendKey 等）只放在仓库外的文件里，脚本运行时读取。仓库有 GitHub 远程，任何文件里都不能出现 key。
+- Server酱免费版每天只能推 5 条（sct.ftqq.com 的说明），所以规定一个子 agent 一次任务只推一条。
 
 ## 重新验证
 
@@ -35,4 +39,6 @@
 - B站字幕可以改写成私有 adapter `bilibili/subtitle`，取代 `bili_subtitle.sh`。
 - `Cannot find default execution context` 的根因还没查清，bb.sh 目前用全局锁规避。
 - exa 的 `web_search_advanced_exa` 没开启（能按日期和域名过滤），开启方法见 `../42_expert/搜索工具总览.md` §5.2。
+- neo 读 SPA（load 事件之后才渲染正文）没测过，`read-url.md` 里等选择器的写法是 [UNKNOWN]。
+- neo `read` 的全文文件存在 BrowserOS 的版本目录下（`BrowserClaw\Application\<版本号>\.browseros\tool-output\`），升级后路径会变。
 - 本机没有 Whisper，也没有 `GROQ_API_KEY`，没有字幕的音视频转不了文字。

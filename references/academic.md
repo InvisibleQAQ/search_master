@@ -21,7 +21,7 @@
   `{"query": "chain of thought prompting", "domain": "academic", "sub_domain": "academic.search", "sub_domain_params": {}, "max_results": 5}`
   可选过滤参数：`year_from` / `year_to`（四位年份）、`category`（如 `Computer Science`）、`min_citations`、`venue`（要和 S2 里的名字完全一致，如 `NeurIPS`）、`open_access`、`doi`。
 - exa：`{"query": "chain of thought prompting paper", "numResults": 5}`。`category:publication` 能用，但先看下面的坑。
-- neo Google Scholar（先调 `name_session`；`run` 的参数写成 `{"agentName": "claude-code", "session": "<上次结果 _meta 里的值>", "code": "<下面的脚本>"}`）：
+- neo Google Scholar（先调 `name_session`；`run` 的参数写成 `{"agentName": "claude-code", "session": "<name_session 返回文字里 browseros-neo session: 后面的值>", "code": "<下面的脚本>"}`）：
 ```js
 const id = await browser.pages.newPage('https://scholar.google.com/scholar?q=' + encodeURIComponent('chain of thought prompting'));
 try { await browser.wait(id, {for: 'selector', value: '#gs_res_ccl_mid .gs_r, #gs_captcha_ccl', timeout: 15000}); } catch (e) {}

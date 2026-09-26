@@ -1,7 +1,8 @@
-# 通用网页搜索、新闻、URL 解析、网络兜底
+# 通用网页搜索、新闻、网络兜底
 
 > 最后验证：2026-09-26。标记：[实测] 本次跑过；[旧测] 引自 2026-09-24 调研（`42_expert/搜索工具总览.md` 及其原始报告）；[UNKNOWN] 没查清。
 > anysearch 和 exa 走本机网络，经常 `fetch failed`。先看文末"网络坏了"一节，分清是网络故障还是工具故障。
+> 给一个 URL 拿正文、别的工具读不到的网页交给 neo：见 `read-url.md`。
 
 ## 中文网页搜索
 
@@ -87,7 +88,7 @@
 | Google Scholar | 见 `academic.md` | — | — |
 
 ### 命令
-先调 `name_session`。`run` 的参数写成 `{"agentName": "claude-code", "session": "<上次结果 _meta 里的值>", "code": "<下面的脚本>"}`。单次 run 硬上限 30 秒，一次最多开约 5 个新页面。
+先调 `name_session`。`run` 的参数写成 `{"agentName": "claude-code", "session": "<name_session 返回文字里 browseros-neo session: 后面的值>", "code": "<下面的脚本>"}`。单次 run 硬上限 30 秒，一次最多开约 5 个新页面。
 ```js
 const q = encodeURIComponent('大模型 风控 实践');
 const E = {  // [url, 等待的选择器, 在页面里执行的代码]
@@ -130,40 +131,6 @@ Bing 的选择器是 `#b_results > li.b_algo h2 a`。它的链接是 `/ck/a?...&
 - neo Google：中文 query → 验证页，0 条；英文 query → 9 条，6.6s。[实测]
 - neo Bing 英文 → 空白页，0 条。[实测]
 
-## 给一个 URL 拿正文
-
-| 站点类型 | 首选 | 备选 | 别用 |
-|---|---|---|---|
-| 普通文章（博客、新闻、技术社区、文档） | exa `web_fetch_exa`（可批量，正文干净，带作者和日期） | anysearch `extract`（全文完整，但带导航和页脚噪声，一次只能一个 URL） | WebFetch（由小模型转述，拿不到原文） |
-| 需要最新状态（刚改过的 README、实时数字） | anysearch `extract` | neo `run` | exa fetch（只读缓存，拿到过旧版 README 和旧 star 数）[旧测] |
-| GitHub README | anysearch `extract` 读 `raw.githubusercontent.com/<owner>/<repo>/<branch>/README.md` [旧测] | exa fetch（带仓库元数据，可能是旧的）[旧测] | — |
-| PDF | exa fetch，`maxCharacters` 调大 [实测 arXiv] | 见 `academic.md` | anysearch `extract`（不支持 PDF）[旧测] |
-| JSON 接口 | anysearch `extract`（原样返回；JSON 太大会报错）[旧测] | — | — |
-| 公众号永久链接 `mp.weixin.qq.com/s/<id>` | exa fetch [旧测] | neo / bb eval 取 `#js_content` [旧测] | anysearch `extract`（4 个链接全部失败）[旧测] |
-| JS 渲染、登录墙、SPA（如知乎专栏） | neo `run`：newPage → wait 等选择器 → evaluate 取 innerText [旧测] | feedgrab（知乎）[旧测] | anysearch、exa、WebFetch（分别返回 extract_failed、CRAWL_UNKNOWN_ERROR、403）[旧测] |
-| X、Reddit、小红书、B站、YouTube、知乎 | 不在本文件，见对应平台的 reference | — | — |
-| 本机网络坏了 | WebFetch | neo `run` | exa、anysearch |
-
-### 命令
-- exa：`{"urls": ["https://a", "https://b"], "maxCharacters": 20000}`。默认每页只给 3000 字。
-- anysearch：`{"url": "https://..."}`
-- WebFetch：传 `url` 和 `prompt`。prompt 要说清楚要什么，它会转述内容。
-
-### 返回什么
-- exa：每页依次是 `# 标题`、URL、Published、Author、正文。批量抓取时某个 URL 失败，会在末尾写一行 `Error fetching <url>: <TAG>`，不影响其他 URL。
-- anysearch：JSON 字符串 `{"url","title","content"}`。HTML 在约 50,000 字处截断；输出超过约 49KB 时，Claude Code 会把它存到文件。
-- 失败标签：anysearch 的 `extract_failed` 表示服务端拒绝，重试没用；exa 的是 `CRAWL_UNKNOWN_ERROR`、`SOURCE_NOT_AVAILABLE`。
-
-### 坑
-- 会静默失败：anysearch 会把验证码页、人机验证页当正文返回；exa 会把缓存里的错误页当正文返回 [旧测]。拿到结果先看标题和开头几行。
-- exa fetch 不能强制实时抓取 [旧测，源码]。
-- anysearch extract 的正文前后带着整站导航和页脚，读的时候要跳过。
-- 大输出会被存到文件，返回的是文件路径。用 grep 或分段 Read 读这个文件，不要重新抓。
-
-### 本次验证
-- InfoQ 文章：exa fetch 正文干净（标题、作者、日期、正文）；anysearch extract 全文完整，但开头约 1.5k 字是导航。[实测]
-- 安全内参文章：exa fetch 正文干净，带 Published 和作者。[实测]
-
 ## Wikipedia
 
 | 需求 | 首选 | 备选 | 别用 |
@@ -177,7 +144,7 @@ Bing 的选择器是 `#b_results > li.b_algo h2 a`。它的链接是 `/ck/a?...&
 
 | 需求 | 首选 | 备选 | 别用 |
 |---|---|---|---|
-| anysearch / exa 连续 fetch failed | 搜索用 WebSearch，读正文用 WebFetch（在 Anthropic 服务端执行） | neo `run`（Chrome 走自己的网络；本次 MCP 全部失败时，照样打开了 Google Scholar 和 arXiv） | 继续重试 exa / anysearch |
+| anysearch / exa 连续 fetch failed | 搜索用 WebSearch（在 Anthropic 服务端执行）；读正文用 neo（Chrome 走自己的网络，给原文，脚本见 `read-url.md`） | 搜索用 neo 跑搜索引擎结果页；读正文用 WebFetch（neo 没连上时用；会转述） | 继续重试 exa / anysearch |
 
 ### 判断
 - 网络问题：anysearch 报 `fetch failed`，exa 报 `web_search_exa error: fetch failed`。
@@ -185,7 +152,7 @@ Bing 的选择器是 `#b_results > li.b_algo h2 a`。它的链接是 `/ck/a?...&
 - 快速自检（Git Bash）：`curl -s -o /dev/null -m 12 -w "%{http_code} %{time_total}\n" https://www.baidu.com`。如果连百度都超时，说明是本机出口坏了，不是某个服务的问题。
 
 ### 规则
-- fetch failed 最多重试 2 次。还失败就切 WebSearch / WebFetch 或 neo，不要再等。
+- fetch failed 最多重试 2 次。还失败就切换：搜索用 WebSearch，读正文用 neo，不要再等。
 - 网络故障往往一整段时间都在失败（本次持续了几分钟），不是偶发的一两次。
 
 ### 坑

@@ -4,14 +4,15 @@
 
 ## 结构
 
-- `SKILL.md`：入口。路由表（平台 → 首选工具 → reference）、工具通则、硬规则、静默失败检查。控制在 100 行以内。
+- `SKILL.md`：入口。"谁来搜"（主 agent 只派搜索子 agent，不自己调工具）和派子 agent 的提示模板、路由表（平台 → 首选工具 → reference）、工具通则、硬规则、静默失败检查。前两块给主 agent 看，后面给搜索子 agent 看。控制在 100 行以内，现在 98 行，再加内容就把后面三块挪进 `references/`。
 - `references/<平台>.md`：每个平台一个文件，统一结构：路由表（需求 | 首选 | 备选 | 别用）→ 命令 → 返回什么 → 坑 → 本次验证。每个文件 200 行以内。
-- `references/workflow.md`：多源搜索流程（来源层、深度档位、五步、子 agent 写法）。
+- `references/workflow.md`：多源搜索流程（来源层、深度档位、五步里主 agent 和子 agent 的分工、bb 和 neo 的并发限制）。
 - `scripts/bb.sh`：bb-browser 的唯一入口。有两种模式（adapter 和 eval），负责开和关自己的 tab、等页面加载、加全局锁、拒绝写操作。
 - `scripts/bili_subtitle.sh`：B站字幕。通过 `bb.sh eval` 执行，不自己管 tab。
 
 ## 约定
 
+- 提示模板和交回格式只写在 `SKILL.md`，`workflow.md` 引用它，不要再抄一份。
 - 新脚本凡是要开 bb-browser tab，一律调用 `bb.sh eval`，不要再写一份开 tab、等加载、关 tab 的代码。
 - 结论要带标记：[实测]、[旧测]、[源码]、[UNKNOWN]。改路由必须有实测证据，并写进对应文件的"本次验证"。
 - reference 里的命令写完整路径 `C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/...`，方便直接复制。仓库搬家时要全局替换这个路径。

@@ -7,12 +7,31 @@ description: Picks the best-verified search or reading tool on this machine for 
 
 每个平台用实测效果最好的工具。命令、参数顺序、返回字段和坑都在 `references/<平台>.md`，只读当前任务用到的那几个。
 
-## 用法
+## 谁来搜
 
-1. 判断平台和需求：搜索、读全文、评论、字幕、最新动态还是元数据。
-2. 在下面的路由表找到 reference，读它，照里面的命令调用。
-3. 结果先过"静默失败检查"，再用。
-4. 用户要调研、深搜，或者问题要跨多个平台时，按 [references/workflow.md](references/workflow.md) 做。
+搜索结果很长（exa 5 条就有 1–2 万字，字幕更长），全进主对话会挤爆上下文。所以：
+
+- **主 agent 不调搜索工具，也不读 `references/<平台>.md`**，查一个事实也一样。用 Agent 工具派 `general-purpose` 子 agent 去搜（Explore 不能写文件），主 agent 只拿它的交回清单。
+- 派几个：查事实派 1 个；调研、深搜、跨平台问题按 [references/workflow.md](references/workflow.md) 分层，2-4 个在同一条消息里并行派。
+- 追问同一批结果时，用 SendMessage 找原来那个子 agent，不要重新派。
+- **提示里说你是"搜索子 agent"时，你就是干活的**：直接按下文调工具，不要再派子 agent。
+- 没有 Agent 工具的环境，主 agent 自己搜，交回格式照旧。
+
+派子 agent 的提示照这个模板写，尖括号换成实际内容：
+
+```text
+你是 search-master 的搜索子 agent：直接调工具，不要再派子 agent。
+任务：<子问题；用户给的约束：时间范围、语言、条数、要不要原文>
+平台：<平台列表>
+先读 C:/Users/18368/Desktop/00_myCode/43_search_master/SKILL.md 的"工具通则""硬规则""静默失败检查"，
+再读 C:/Users/18368/Desktop/00_myCode/43_search_master/references/<路由表里对应的 reference，可能不止一个>，照里面的命令调。
+MCP 工具第一次用之前，先 ToolSearch "select:<工具名>" 加载。
+交回（不要贴原始结果）：
+1. 每条一行：结论 | URL | 来源平台 | 日期 | 是否读过全文
+2. 失败的工具：报错的、静默失败的（退回通用搜索、验证码页等），各写一句原因
+3. 新线索：结果里出现的新人名、术语、链接
+要原文（字幕、全文）时写进文件，只交回绝对路径和摘要；用户没指定位置就放 C:/Users/18368/AppData/Local/Temp/search-master/。
+```
 
 ## 路由表
 

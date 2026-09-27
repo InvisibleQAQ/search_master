@@ -1,7 +1,7 @@
 # GitHub 与代码
 
 > 最后验证：2026-09-27（找仓库、clone + semble、deepwiki、context7、WebFetch）；其余条目 2026-09-26。标记：[实测] 09-26 或 09-27 跑过（哪天跑的见文末"本次验证"）；[旧测] 引自 2026-09-24 调研；[UNKNOWN] 没查清。时间一律是本机时区（EDT，-04:00）。
-> 本机网络不稳：MCP（anysearch/exa/context7/deepwiki，走 Node fetch）和 gh（走 https_proxy）会各自失败，互不同步。09-27 gh 共 28 次调用，20 次 `TLS handshake timeout`（每次 10 秒），成功的每次 5–10 秒。任一工具报 `fetch failed` / `TLS handshake timeout` / `The operation timed out.`，按 SKILL.md"网络"一条，原样重试最多 2 次（一共调 3 次），再换下一个工具。
+> 本机网络不稳：MCP（anysearch/exa/context7/deepwiki，走 Node fetch）和 gh（走 https_proxy）会各自失败，互不同步。09-27 gh 共 28 次调用，20 次 `TLS handshake timeout`（每次 10 秒），成功的每次 5–10 秒。任一工具报 `fetch failed` / `TLS handshake timeout` / `The operation timed out.`，按 `rules.md`"网络"一条，原样重试最多 2 次（一共调 3 次），再换下一个工具。
 
 | 需求 | 首选 | 备选 | 别用 |
 |---|---|---|---|

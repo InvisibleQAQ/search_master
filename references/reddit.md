@@ -9,7 +9,7 @@
 | 在某个版块里搜 | bb `reddit/search "<q>" <subreddit>` [实测] | — | — |
 | 这周 / 这个月最热的讨论 | bb `reddit/search "<q>" "" top week` [实测] | — | — |
 | 读帖子和评论树 | bb `reddit/thread <url> <depth> <count>` [实测] | — | anysearch `reddit_post` 附带的评论（只有一部分；用户决定只用 bb）；anysearch `extract`（返回人机验证页但不报错）；exa fetch（`SOURCE_NOT_AVAILABLE`）[旧测] |
-| bb 用不了（Chrome 没开）/ 不想动真实账号 | 只剩 SKILL.md 的通用兜底：neo 读页面（`read-url.md`）；neo 读 Reddit 没测过，neo 里有没有登录 Reddit 也没查 [UNKNOWN] | — | anysearch `reddit_post`（用户决定只用 bb） |
+| bb 用不了（Chrome 没开）/ 不想动真实账号 | 只剩 `rules.md` 的通用兜底：neo 读页面（`read-url.md`）；neo 读 Reddit 没测过，neo 里有没有登录 Reddit 也没查 [UNKNOWN] | — | anysearch `reddit_post`（用户决定只用 bb） |
 
 ## 命令
 

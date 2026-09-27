@@ -12,7 +12,7 @@ neo 和 bb 用的都是用户的真实账号，平台会记录浏览行为。neo
 
 ## 命令：neo（首选）
 
-先用 Skill 工具加载 browseros-neo，调 `name_session`。`run` 的参数写成 `{"agentName": "claude-code", "session": "<name_session 返回的值>", "code": "<脚本>"}`。三个脚本之间都要隔至少 10 秒。结果超过约 5,000 字符时 `r` 是 `{writtenToFile, path}`，去掉 `\\?\` 前缀后用 Read 或 grep 读 `path`；文件首尾各多一行 `[UNTRUSTED_PAGE_CONTENT ...]` 标记，当 JSON 解析前先去掉（SKILL.md"工具通则"）[实测]。
+先用 Skill 工具加载 browseros-neo，调 `name_session`。`run` 的参数写成 `{"agentName": "claude-code", "session": "<name_session 返回的值>", "code": "<脚本>"}`。三个脚本之间都要隔至少 10 秒。结果超过约 5,000 字符时 `r` 是 `{writtenToFile, path}`，去掉 `\\?\` 前缀后用 Read 或 grep 读 `path`；文件首尾各多一行 `[UNTRUSTED_PAGE_CONTENT ...]` 标记，当 JSON 解析前先去掉（`rules.md`"工具通则"）[实测]。
 
 脚本 S（搜索）：
 ```js

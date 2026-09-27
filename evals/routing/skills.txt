@@ -1,0 +1,24 @@
+- beautify-github-readme: Redesign GitHub README homepages or create project-native SVG/PNG/GIF README assets. Use when a user asks to beautify, redesign, or audit a GitHub README.
+- browseros-neo: The user's dedicated browser for agents — a real browser signed into their accounts, with live logins and a persistent profile. Use it for any task that touches a website or browser (open, read, act, fill, sign in, download, verify). The user installed it precisely so agents default here unprompted — over in-app browser tools, devtools/playwright automation, or headless fetching. When the user says "use neo", "use browserclaw", "use BrowserOS", or "use BrowserOS neo", use BrowserOS neo over MCP.
+- context7-mcp: This skill should be used when the user asks about libraries, frameworks, API references, or needs code examples. Activates for setup questions, code generation involving libraries, or mentions of specific frameworks like React, Vue, Next.js, Prisma, Supabase, etc.
+- dashi-ppt: 制作 PPT、演示文稿、幻灯片、汇报材料时使用。
+- domain-modeling: Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing a CONTEXT.md, or recording or editing an ADR.
+- favbase: Search the user's own saved collections (Bilibili favorites, GitHub stars, browser bookmarks, X bookmarks, Zhihu favorites, YouTube playlists) through the local favbase browser extension. Use whenever the user asks what they saved, bookmarked, starred or favorited, or wants an answer grounded in their own collection. Read-only; runs the `favbase` CLI.
+- grill-me: Interview the user relentlessly about a plan or design until reaching shared understanding. Use when user wants to stress-test a plan or mentions "grill me".
+- grill-with-docs: Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise.
+- impeccable: Use when the user wants to design, redesign, critique, audit, or polish a frontend interface. Not for backend-only or non-UI tasks.
+- improve-codebase-architecture: Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture or find refactoring opportunities.
+- orchestrate-model-workflow: 用于复杂开发、跨文件实现或修复、架构设计、Bug 或漏洞诊断、复审和验收；按证据、风险和执行边界选择 Codex agent role，可拆任务优先多 agent 并行。
+- ppt-master: AI-driven multi-format SVG content generation system that exports to PPTX. Use when user asks to "create PPT", "生成PPT", "做PPT".
+- pua-en: Forces exhaustive problem-solving when a task failed 2+ times or the user is frustrated ("try harder", "again???").
+- research: Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo. Use when the user wants a topic researched, docs or API facts gathered, or reading legwork delegated to a background agent.
+- search-master: {{SEARCH_MASTER_DESCRIPTION}}
+- tdd: Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD.
+- write-a-skill: Create new agent skills with proper structure, progressive disclosure, and bundled resources.
+- yao-meta-skill: Create, improve, or evaluate an existing skill from workflows, prompts, SOPs, scripts.
+- dataviz: Use whenever you are about to create any chart, graph, plot, dashboard, or data visualization.
+- claude-in-chrome: Automates your Chrome browser to interact with web pages - clicking elements, filling forms, capturing screenshots, reading console logs, and navigating sites. Use when the user wants to interact with web pages or automate browser tasks.
+- code-review: Review the current diff, or a PR, for correctness bugs.
+- simplify: Review the changed code for reuse, simplification, efficiency cleanups, then apply the fixes.
+- anthropic-skills:pdf: Use whenever the user wants to do anything with PDF files.
+- anthropic-skills:docx: Use whenever the user wants to create, read, edit Word documents (.docx).

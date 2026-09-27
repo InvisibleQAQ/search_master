@@ -1,7 +1,7 @@
 # 人物和公司
 
 > 最后验证：2026-09-27，只重测了脉脉、牛客（neo）；exa `category:company` / `people` 09-27 因断网没能复测，其余仍是 2026-09-26 的。标记：[实测] 跑过（日期见"本次验证"）；[旧测] 引自 2026-09-24 调研；[推断] 由现象推出、没直接验证；[UNKNOWN] 没查清。钟点时间都是本机时间（美东，EDT -04:00）。
-> 本机境外网络不稳：09-26 exa 前 2 次、anysearch 多次 `fetch failed`（每次约 10 秒），重试后成功。失败先重试（最多 2 次），别急着下"工具不行"的结论。09-27 是整段断网，exa 11 次全失败，重试没用：几个境外工具同时失败、curl 经代理访问境外站超时而 baidu 正常返回，就是代理上游断了，不是工具坏了，按 SKILL.md"网络"换工具。
+> 本机境外网络不稳：09-26 exa 前 2 次、anysearch 多次 `fetch failed`（每次约 10 秒），重试后成功。失败先重试（最多 2 次），别急着下"工具不行"的结论。09-27 是整段断网，exa 11 次全失败，重试没用：几个境外工具同时失败、curl 经代理访问境外站超时而 baidu 正常返回，就是代理上游断了，不是工具坏了，按 `rules.md`"网络"换工具。
 
 | 需求 | 首选 | 备选 | 别用 |
 |---|---|---|---|
@@ -96,7 +96,7 @@ return r.value;
 ```
 DOM 备选：搜索页里 `a[href*="/discuss/"]` 和 `a[href*="/feed/main/detail/"]` 是帖子链接。
 ### 返回什么
-`{success, code: 0, data: {current, size, total, totalPage, records, tag, relateSearchList, relateSearch}}`；每条 record `{rc_type, entityDataId, title, data, extraInfo, ...}`。`rc_type 205` 是公司卡片，`data` 里有 `companyName, companyScale, companyFinancingStage, jobCount, discussCount, postCount, followedCount, officialUrl, schoolJobUrl, internJobUrl` 等。`rc_type 201` 是动态帖：详情链接 `https://www.nowcoder.com/feed/main/detail/<data.momentData.uuid>`，发帖时间 `data.momentData.createTime`（毫秒时间戳，换算见 SKILL.md"时间"）[实测]。207 等其他类型的含义 [UNKNOWN]。`total` 两次都是 400，可能是接口上限 [推断]，不要当成真实命中数。
+`{success, code: 0, data: {current, size, total, totalPage, records, tag, relateSearchList, relateSearch}}`；每条 record `{rc_type, entityDataId, title, data, extraInfo, ...}`。`rc_type 205` 是公司卡片，`data` 里有 `companyName, companyScale, companyFinancingStage, jobCount, discussCount, postCount, followedCount, officialUrl, schoolJobUrl, internJobUrl` 等。`rc_type 201` 是动态帖：详情链接 `https://www.nowcoder.com/feed/main/detail/<data.momentData.uuid>`，发帖时间 `data.momentData.createTime`（毫秒时间戳，换算见 `rules.md`"时间"）[实测]。207 等其他类型的含义 [UNKNOWN]。`total` 两次都是 400，可能是接口上限 [推断]，不要当成真实命中数。
 ### 坑
 - 这个接口是按请求形态试出来的，页面加载时的资源列表里没看到它（只看到 `ai/search/*`）；页面实际用哪个接口 [UNKNOWN]，网站改版可能失效，失效就退回 DOM。
 - `type` 除 `all` 以外的取值（只搜帖子、只搜公司）[UNKNOWN]。

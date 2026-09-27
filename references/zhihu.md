@@ -62,7 +62,7 @@ d=$(mktemp -d); cd "$d" && OUTPUT_DIR="$d/out" feedgrab 'https://zhuanlan.zhihu.
 
 - 搜索只给摘要，全文要逐篇 eval，每篇都开一个 tab、在全局锁上排队。先按 `voteup_count`、`created_time`、`type` 挑 3–5 篇再读，别把 17 条全读一遍。
 - `author` 带 `<em>` 高亮标签没去掉（例如 `<em>代码</em>科小土豆`），用之前自己剥掉 [实测]。
-- `created_time` 是 UTC 秒，按 SKILL.md"时间"一条换成本机时区（Python `datetime.fromtimestamp(ts)`）。本机是美东，同一时刻的日期可能比北京时间早一天，交回时写本机日期，不要混用。页面 `.ContentItem-time` 同样按本机时区显示；后面的"・北京"是作者 IP 属地，不是时区 [实测]。
+- `created_time` 是 UTC 秒，按 `rules.md`"时间"一条换成本机时区（Python `datetime.fromtimestamp(ts)`）。本机是美东，同一时刻的日期可能比北京时间早一天，交回时写本机日期，不要混用。页面 `.ContentItem-time` 同样按本机时区显示；后面的"・北京"是作者 IP 属地，不是时区 [实测]。
 - bb `zhihu/search` 只取第一页，`has_more: true` 也没有翻页参数；会过滤掉非 `search_result` 条目，所以条数比 count 少。
 - bb 参数只能按位置写，`--count 20` 会错位。
 - `zhihu/question` 的问题详情接口要签名（403，code 10003），但 `questions/<qid>/answers` 接口不要，本次返回 200 [实测]。

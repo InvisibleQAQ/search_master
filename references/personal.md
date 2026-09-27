@@ -45,7 +45,7 @@ favbase tags                                     # 标签和条数；search 可�
 - `coverage` 的数字不能跨天直接比：09-27 重新配对后 bilibili 已抓取 3297→2880、正文 172→146，bookmarks 正文 305→173，x 从 0 变成 2329，可能是连到了另一个扩展实例或 profile [UNKNOWN]。所以 B站正文是否在推进，也没法从这两次看出来。
 - 结果可能有重复 [旧测]。
 - 前提：Chrome 开着且扩展里 Agent Skills 开关打开。第一次调用会自动起 daemon（stderr 打印 `starting daemon`）。退出码 2 → 跑 `favbase doctor`；1 → 用法或配置错误；3 → 参数或工具错误。
-- 退出码 2、报 `bad-token`（`doctor` 也是退出码 2）：扩展的配对 token 和 CLI 的对不上。这要用户动手：请用户用扩展设置卡片上的值重跑 `favbase setup --token <token> --port 17836`，按 SKILL.md 的提醒流程推送（`notify.py` 写法见 `read-url.md`），并列进交回清单"要用户动手的"。token 的值不要出现在输出、交回和文件里。
+- 退出码 2、报 `bad-token`（`doctor` 也是退出码 2）：扩展的配对 token 和 CLI 的对不上。这要用户动手：请用户用扩展设置卡片上的值重跑 `favbase setup --token <token> --port 17836`，按 `rules.md` 的提醒流程推送（`notify.py` 写法见 `read-url.md`），并列进交回清单"要用户动手的"。token 的值不要出现在输出、交回和文件里。
 - 本机 CLI 是 0.2.1，doctor 显示 npm 最新是 0.2.0（本地比 registry 新），不用处理。
 
 ## 本次验证

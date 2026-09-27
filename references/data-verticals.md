@@ -1,14 +1,15 @@
 # 结构化数据垂直：行情、CVE、临床试验、药品、专利、空气质量、法律
 
-> 最后验证：2026-09-26。标记：[实测] 本次跑过；[旧测] 引自 2026-09-24 调研；[UNKNOWN] 没查清。
+> 最后验证：2026-09-27，只重测了 bb 雪球（A 股、美股）和断网时的 WebSearch、neo；anysearch 各垂直 09-27 因断网没能复测，结论仍是 2026-09-26 的。标记：[实测] 跑过（日期见"本次验证"）；[旧测] 引自 2026-09-24 调研；[UNKNOWN] 没查清。钟点时间都是本机时间（美东，EDT -04:00）。
+> 断网（代理境外上游断开）时 anysearch 垂直全部 `fetch failed`，这不说明工具坏了；雪球走国内网络照常能用，其他需求按 SKILL.md"网络"换 WebSearch，但 WebSearch 摘要里的日期不可信（见"本次验证"）。
 > anysearch 垂直必须先 `get_sub_domains(domains=[...])`（一次最多 5 个），参数只能用它给的。下面的 JSON 是它在 09-24 / 09-26 给出的参数，照抄前仍要先调一次确认。其余 sub_domain 的参数也用它查。
-> `batch_search` 一次最多 5 条，传输层失败时整批都丢；5 条垂直结果本次合计 6 万字，被存成了文件。控制 `max_results`。
+> `batch_search` 一次最多 5 条，传输层失败时整批都丢；09-26 5 条垂直结果合计 6 万字，被存成了文件。控制 `max_results`。
 
 | 需求 | 首选 | 备选 | 别用 |
 |---|---|---|---|
-| A 股实时快照 | bb `xueqiu/stock SH600519` [实测 0.3 秒] | anysearch `finance.quote` + `cn_code`（逐日收盘）[实测] | bb `eastmoney/stock`（Failed to fetch）[实测] |
-| A 股日线 / 估值（PE、PB、股息率） | anysearch `finance.quote` + `cn_code` + `period` [实测] | bb `xueqiu/stock`（只有当天） | — |
-| 美股报价 | anysearch `finance.quote` + `symbol` [实测 1.3 秒] | bb `yahoo-finance/quote`（25 秒）[实测] | — |
+| A 股实时快照 | bb `xueqiu/stock SH600519`（休市时是最近交易日收盘，看 `market_status`、`time`）[实测 adapter 0.38 秒 / 实际 4.9 秒] | anysearch `finance.quote` + `cn_code`（逐日收盘）[实测] | bb `eastmoney/stock`（Failed to fetch）[实测] |
+| A 股日线 / 估值（PE、PB、股息率） | anysearch `finance.quote` + `cn_code` + `period` [实测] | bb `xueqiu/stock`（只有最近一个交易日） | — |
+| 美股报价 | anysearch `finance.quote` + `symbol` [实测 1.3 秒] | bb `xueqiu/stock AAPL`（走国内网络，代理断了也能用；adapter 0.39 秒 / 实际 5.1 秒）[实测]；bb `yahoo-finance/quote`（走境外网络，adapter 24.9 秒 / 实际 [UNKNOWN]）[实测] | — |
 | 港股 | bb `xueqiu/stock 00700` [UNKNOWN] | anysearch `finance.quote` [UNKNOWN] | — |
 | 外汇 / 加密 / 商品 / 指数 / ETF | anysearch `finance.quote` `type=forex/crypto/commodity/index/etf` [UNKNOWN] | — | — |
 | 个股英文新闻 | anysearch `finance.news` `type=stock` [旧测 好] | — | `finance.news` `type=flash`（退回通用搜索）[旧测] |
@@ -40,14 +41,15 @@ bash C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/bb.sh yahoo-finan
 ### 返回什么
 - anysearch 美股：一行 `Symbol | Name | Exchange | Price | Open | PrevClose | Change | Change% | DayHigh | DayLow | YearHigh | YearLow | Volume | MarketCap | Avg50 | Avg200`，来源 financialmodelingprep。
 - anysearch A 股：每个交易日一条 `600519.SH <日期> 日线行情`，JSON 字段 `trade_date, open, high, low, close, pre_close, change, pct_chg, vol, amount, turnover_rate, pe, pe_ttm, pb, ps, ps_ttm, dv_ratio, dv_ttm, total_mv, circ_mv`。和雪球对过数：`vol` 单位是手，`amount` 是千元，`total_mv` / `circ_mv` 是万元。
-- bb `xueqiu/stock`：`name, symbol, exchange, currency, price, change, changePercent, open, high, low, prevClose, amplitude, volume（股）, amount, turnover_rate, marketCap, floatMarketCap, ytdPercent, market_status（如"休市"）, time（UTC）, url`。不用登录。
+- bb `xueqiu/stock`：`name, symbol, exchange, currency, price, change, changePercent, open, high, low, prevClose, amplitude, volume（股）, amount, turnover_rate, marketCap, floatMarketCap, ytdPercent, market_status（如"休市"）, time（UTC）, url`。不用登录。美股的 `floatMarketCap` 是 null [实测]。
 - bb `yahoo-finance/quote`：`symbol, name, price, change（字符串）, changePercent, open, high, low, prevClose, volume, currency, exchange, source, url`。
 ### 坑
 - anysearch 美股没有报价时间戳；还会附带 AAPL.L / .MX / .TO / .NE / .DE 以及名字里含 AAPL 的无关印度股票，只取 `Symbol` 完全匹配的那条。`period` 对美股不返回历史序列 [旧测]。
 - anysearch A 股给的是日线收盘，不是盘中实时价；要当前价和交易状态用雪球。
+- 雪球休市时 `price` 是最近交易日的收盘价，不是实时价：09-27 查茅台拿到的是 09-24 收盘（北京时间 15:00 = 03:00 EDT），和 09-26 查的完全一样。先看 `market_status` 和 `time` 再说"现价"。
 - bb `eastmoney/stock` 两次都是 `TypeError: Failed to fetch`。adapter 在 `quote.eastmoney.com` 页里请求 `searchapi.eastmoney.com` 和 `push2.eastmoney.com`，失败原因 [UNKNOWN]。`eastmoney/news` 没测。
-- bb `yahoo-finance/quote` 走境外网络，本次 25 秒；雪球其他命令（`search`、`hot`、`hot-stock`；`feed`、`watchlist` 要登录）没测 [UNKNOWN]。
-- 三个来源的 AAPL（341.07）和茅台（1237 / -14.24）数字互相一致。
+- bb `yahoo-finance/quote` 走境外网络，09-26 adapter 24.9 秒；雪球其他命令（`search`、`hot`、`hot-stock`；`feed`、`watchlist` 要登录）没测 [UNKNOWN]。
+- 09-26 三个来源的 AAPL（341.07）和茅台（1237 / -14.24）数字互相一致；09-27 雪球 AAPL 341.07 和 WebSearch 查到的 investing.com、cnbc 一致。
 
 ## CVE
 ### 命令
@@ -60,6 +62,7 @@ bash C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/bb.sh yahoo-finan
 1 条 osv.dev 记录：发布日期、描述、GHSA 等别名、CVSS 向量、受影响版本、分类好的参考链接。
 ### 坑
 - `commit`、`package` 两种查法没测 [UNKNOWN]。
+- 断网时 neo 也打不开 osv.dev（境外站），WebSearch 能查到 CVSS 和受影响版本 [实测]。
 - 绝不调 `security.scan`（会把 IOC 提交给第三方）。
 
 ## 临床试验
@@ -106,7 +109,7 @@ clinicaltrials.gov 记录：`NCT ID, Official Title, Status, Phase, Sponsor, Sex
 ### 坑
 - 单条几千字（同族 + 权利要求 + 说明书），`max_results` 2-3。
 - 同一批结果有两种格式：第 1 条是完整题录但没有 URL，第 2 条来自 espacenet、字段名不同。
-- `applicant` 过滤不生效 [旧测]；`date_start` 是按公开日还是申请日过滤 [UNKNOWN]（本次第 1 条申请日 2023、公开日 2025）。
+- `applicant` 过滤不生效 [旧测]；`date_start` 是按公开日还是申请日过滤 [UNKNOWN]（09-26 第 1 条申请日 2023、公开日 2025）。
 
 ## 空气质量
 ### 命令
@@ -118,8 +121,8 @@ clinicaltrials.gov 记录：`NCT ID, Official Title, Status, Phase, Sponsor, Sex
 ### 返回什么
 aqicn.org：每条一个站点，第 1 条是城市总体，后面是附近监测站。字段有 AQI、等级（中文）、健康建议、坐标、更新时间。约 0.6–1 秒 [实测]。
 ### 坑
-- 更新时间是站点当地时间，不是 UTC：北京、上海显示 `2026-09-26 21:00:00`，调用时是 UTC 13 点左右，也就是北京时间 21 点，说明数据是实时的 [实测]。
-- 只有 AQI 总值，没有 PM2.5、PM10 分项（描述里提到了分项，本次结果里没有）[实测]。
+- 更新时间是站点当地时间，不是 UTC：北京、上海显示 `2026-09-26 21:00:00`，调用时约 09-26 09:00 EDT，也就是北京时间 21 点，说明数据是实时的 [实测]。
+- 只有 AQI 总值，没有 PM2.5、PM10 分项（描述里提到了分项，09-26 的结果里没有）[实测]。
 
 ## 法律
 ### 命令
@@ -132,22 +135,29 @@ aqicn.org：每条一个站点，第 1 条是城市总体，后面是附近监�
 ### 坑
 - `legal.statute` 查中国法律就是通用搜索，不按条款结构化；直接用通用搜索效果一样，拿到官方原文链接再读全文。
 - 国家法律法规数据库 flk.npc.gov.cn 用 neo 查是否更好 [UNKNOWN]。
-- 结构化参数只对境外源有意义：`collection`（FR / CFR / USCODE / BILLS / PLAW …）、`doc_type`（EUR-Lex、UK legislation、Federal Register 各有取值）、`agency`、`date_from` / `date_to`；`legal.case` 走 CanLII / ECHR / CourtListener；`legal.legislation` 只管美国国会。全部没测 [UNKNOWN]。
+- 结构化参数只对境外源有意义：`collection`（FR / CFR / USCODE / BILLS / PLAW …）、`doc_type`（EUR-Lex、UK legislation、Federal Register 各有取值）、`agency`、`date_from` / `date_to`；`legal.case` 走 CanLII / ECHR / CourtListener；`legal.legislation` 只管美国国会。全部没测 [UNKNOWN]：09-27 试过 `jurisdiction=US, collection=USCODE`，因断网 `fetch failed`，`USCODE` 会不会被接受、查美国法律会不会也退回通用搜索，仍不知道。
 
 ## 本次验证
-- anysearch `get_sub_domains` 开头连续 3 次 `fetch failed`；finance / security / health.trial / legal 于是按 09-24 记录的参数直接跑；后来一次成功，确认 health / ip / environment 参数没变。
-- `finance.quote` AAPL → 8 条，1.3 秒，第 1 条正确，价格 341.07。
-- `finance.quote` 600519.SH period=7d → 4 条日线，4.9 秒，最新 09-24 收盘 1237。
-- `security.vuln` CVE-2024-3094 → 1 条 osv.dev，0.3 秒，好。
-- `health.trial` "tirzepatide obesity phase 3" → 10 条，0.4 秒，数据全但不按分期过滤。
-- `legal.statute` CN 个人信息保护法 → 10 条，2.2 秒，通用网页，确认退回。
-- `ip.global` 固态电池硫化物电解质 date_start=2024 → 2 条，3.0 秒，同族 9 件、法律状态齐全。这个 batch 前 2 次 `fetch failed`，第 3 次成功。
-- `health.drug`、`environment.aqi` → 上午所在 batch 两次 `fetch failed`，没拿到结果。下午网络恢复后重跑：
-  - `get_sub_domains(code, health, environment)` → 一次成功，参数没变。
-  - `health.drug` "metformin" → 2 条，1.0 秒：第 1 条是复方药 ZITUVIMET 的整份说明书，第 2 条是 RxNav 条目。
-  - `health.drug` "二甲双胍" → 2 条，0.5 秒，Uritact、Lastacaft，全部无关。
-  - `health.drug` "metformin hydrochloride tablets" → 3 条，1.1 秒：NDC 记录、RxNav、FAERS 汇总（57,013 份报告），全部对。
-  - `environment.aqi` Beijing → 3 条，1.1 秒，AQI 40；"上海" → 2 条，0.6 秒，AQI 57。
-- bb `xueqiu/stock SH600519` → 成功，0.33 秒（含开 tab 共 5 秒）。
-- bb `eastmoney/stock 600519` → 两次 `Failed to fetch`，失败。
-- bb `yahoo-finance/quote AAPL` → 成功，24.9 秒。
+- 2026-09-26（anysearch 各垂直的结论都来自这次）：
+  - anysearch `get_sub_domains` 开头连续 3 次 `fetch failed`；finance / security / health.trial / legal 于是按 09-24 记录的参数直接跑；后来一次成功，确认 health / ip / environment 参数没变。
+  - `finance.quote` AAPL → 8 条，1.3 秒，第 1 条正确，价格 341.07。
+  - `finance.quote` 600519.SH period=7d → 4 条日线，4.9 秒，最新 09-24 收盘 1237。
+  - `security.vuln` CVE-2024-3094 → 1 条 osv.dev，0.3 秒，好。
+  - `health.trial` "tirzepatide obesity phase 3" → 10 条，0.4 秒，数据全但不按分期过滤。
+  - `legal.statute` CN 个人信息保护法 → 10 条，2.2 秒，通用网页，确认退回。
+  - `ip.global` 固态电池硫化物电解质 date_start=2024 → 2 条，3.0 秒，同族 9 件、法律状态齐全。这个 batch 前 2 次 `fetch failed`，第 3 次成功。
+  - `health.drug`、`environment.aqi` → 最初所在的 batch 两次 `fetch failed`，没拿到结果。网络恢复后重跑：
+    - `get_sub_domains(code, health, environment)` → 一次成功，参数没变。
+    - `health.drug` "metformin" → 2 条，1.0 秒：第 1 条是复方药 ZITUVIMET 的整份说明书，第 2 条是 RxNav 条目。
+    - `health.drug` "二甲双胍" → 2 条，0.5 秒，Uritact、Lastacaft，全部无关。
+    - `health.drug` "metformin hydrochloride tablets" → 3 条，1.1 秒：NDC 记录、RxNav、FAERS 汇总（57,013 份报告），全部对。
+    - `environment.aqi` Beijing → 3 条，1.1 秒，AQI 40；"上海" → 2 条，0.6 秒，AQI 57。
+  - bb `xueqiu/stock SH600519` → 成功，adapter 0.33 秒 / 实际约 5 秒。
+  - bb `eastmoney/stock 600519` → 两次 `Failed to fetch`，失败。
+  - bb `yahoo-finance/quote AAPL` → 成功，adapter 24.9 秒 / 实际 [UNKNOWN]。
+- 2026-09-27（冒烟测试）。05:15–05:41 本机代理的境外上游断开：curl 经代理访问 api.exa.ai、google、osv.dev 都超时，baidu 0.09 秒 200。这段时间 anysearch 的失败不能当作工具坏了的证据，anysearch 各垂直的路由保持 09-26 的结论，09-27 因断网未能复测。
+  - bb `xueqiu/stock SH600519`（05:15）→ 成功，adapter 0.38 秒 / 实际 4.9 秒。休市，返回 09-24 收盘 1237 元，和 09-26 那次完全相同；09-25 为什么没有新数据 [UNKNOWN]。
+  - bb `xueqiu/stock AAPL`（05:38，断网中）→ 成功，adapter 0.39 秒 / 实际 5.1 秒，341.07 USD（09-25 16:00 EDT 收盘），和 WebSearch 查到的 investing.com、cnbc 一致；`floatMarketCap` 为 null。据此把雪球加为美股备选（yahoo 走境外网络，断网时用不了）。
+  - anysearch 全部 `fetch failed`（断网）：`finance.quote` AAPL 5 次、`security.vuln` CVE-2024-3094 4 次、`ip.global` 2 次、`legal.statute`（jurisdiction=US, collection=USCODE）2 次、`get_sub_domains` 7 次。
+  - WebSearch（断网中）→ 查到 CVE-2024-3094（CVSS 10，xz-utils 5.6.0 / 5.6.1）和 AAPL 行情；但摘要自称 "as of Sep 27"，实际是 09-25 收盘，摘要日期不可信。
+  - neo 打开 osv.dev → 约 20 秒仍是 about:blank（代理断了，境外站打不开）。

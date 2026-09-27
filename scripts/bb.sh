@@ -9,7 +9,7 @@
 # 环境变量：
 #   BB_OPEN_URL   adapter 模式下改用这个地址开 tab（默认 https://<adapter 的 domain>/）
 #                 例：BB_OPEN_URL=https://www.xiaohongshu.com/explore
-#   BB_SETTLE     页面加载完后再等几秒（默认 2）。小红书、X、Linux.do 这类 SPA 要等前端
+#   BB_SETTLE     页面加载完后再等几秒（默认 2）。小红书、X 这类 SPA 要等前端
 #                 hydrate，否则 adapter 会误报 Not logged in 或 execution context 错误；用 6。
 #   BB_LOCK_WAIT  排队最多等几秒（默认 180）。
 #

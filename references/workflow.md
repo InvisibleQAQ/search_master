@@ -54,7 +54,7 @@
 
 ## 网络
 
-anysearch、exa、context7 走本机代理，经常整段时间 `fetch failed`。每个广搜方案都要有退路：WebSearch / WebFetch（在服务端执行）不受影响；neo 通常也能用，但代理上游节点断了时它也打不开 [推断]。判断方法和兜底规则见 `web.md` 最后一节。
+anysearch、exa、context7 走本机代理，经常整段时间 `fetch failed`。每个广搜方案都要有退路：WebSearch 在服务端执行，不受影响；neo 读国内站照常，但代理上游节点断了时境外站也打不开 [实测]；WebFetch 断网时能不能用，证据相反 [UNKNOWN]。判断方法和兜底规则见 `web.md` 最后一节。
 
 ## 输出
 

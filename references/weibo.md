@@ -1,6 +1,6 @@
 # 微博
 
-> 最后验证：2026-09-26。标记：[实测] 本次跑过；[旧测] 引自 2026-09-24 调研；[UNKNOWN] 没查清。
+> 最后验证：2026-09-27。标记：[实测] 本次跑过；[旧测] 引自 2026-09-24 调研；[UNKNOWN] 没查清。
 
 | 需求 | 首选 | 备选 | 别用 |
 |---|---|---|---|
@@ -33,15 +33,15 @@ anysearch（只在需要"今天有人在说什么"时用，别指望相关性）
 
 ## 返回什么
 
-- `m_weibo/search`：`{q, page, count, posts[]}`。每条有 `id`、`text`、`user`、`uid`、`created_at`、`source`（博主认证信息）、`reposts_count`、`comments_count`、`likes_count`、`pic_count`、`url`（`m.weibo.cn/status/<id>`）。一页约 16 条，约 1.2 秒。排序是综合排序，不按时间。
-- `weibo/post`：`id`、`mblogid`、`text`（长文全文）、`is_long_text`、`created_at`、三个计数、`pics[]`、`user{id, screen_name, verified}`、`url`（`weibo.com/<uid>/<mblogid>`）。约 0.5 秒。
+- `m_weibo/search`：`{q, page, count, posts[]}`。每条有 `id`、`text`、`user`、`uid`、`created_at`、`source`（博主认证信息）、`reposts_count`、`comments_count`、`likes_count`、`pic_count`、`url`（`m.weibo.cn/status/<id>`）。一页约 16 条，adapter 1.15–1.39 秒 / 实际 42 秒（实际值只测到 1 次）。排序是综合排序，不按时间。
+- `weibo/post`：`id`、`mblogid`、`text`（长文全文）、`is_long_text`、`created_at`、三个计数、`pics[]`、`user{id, screen_name, verified}`、`url`（`weibo.com/<uid>/<mblogid>`）。adapter 约 0.5 秒 / 实际 5 秒。
 - `m_weibo/comments`：`{id, max_id, count, comments[]}`，每条 `id`、`text`、`user`、`uid`、`created_at`、`likes_count`、`reply_count`。本次一页 18 条。
 - `weibo/comments`：`{post_id, count, max_id, has_more, comments[]}`，每条多了 `user{id, screen_name, verified}`、`reply_to`。一页 20 条。
 - anysearch `weibo`：`m.weibo.cn/detail/<id>` 链接 + 截断正文 + 发布时间 + 点赞、评论、转发数。约 1.9 秒。
 
 ## 坑
 
-- `m_weibo/search` 的长文会截断，以 "...全文" 结尾，要再调 `weibo/post` 取全文。
+- `m_weibo/search` 的长文会截断，以 "...全文" 结尾（2026-09-27 一页 16 条里 12 条），要再调 `weibo/post` 取全文 [实测]。
 - `weibo/comments` 的 `likes_count` 永远是 0：adapter 读的是 `c.like_count`（源码第 35 行），同一条评论在 `m_weibo/comments` 里是 4 个赞。要点赞数就用 `m_weibo/comments`。
 - `weibo/comments` 传 count=5 还是返回 20 条。是参数没传进去，还是微博接口不认 count [UNKNOWN]。
 - `m_weibo/comments` 的 `max_id` 为空字符串时，应该是没有下一页；它没有 `has_more` 字段。
@@ -53,8 +53,12 @@ anysearch（只在需要"今天有人在说什么"时用，别指望相关性）
 
 ## 本次验证
 
-- bb `m_weibo/search` "大模型 风控" → 16 条，1.15 秒；看过的前 6 条里有 4 条以 "...全文" 截断。
-- bb `weibo/post` 5270271187749886（搜索结果里被截断的一条）→ 全文，`is_long_text: true`，0.47 秒。
-- bb `m_weibo/comments` 5270271187749886 → 18 条，点赞数正常。
-- bb `weibo/comments` 5270271187749886 5 → 20 条，has_more true，`likes_count` 全是 0。
-- anysearch `weibo` "大模型 风控" → 5 条，1.9 秒，全部不相关，都是当天的帖子。
+- 2026-09-26（bb 耗时只有 adapter，实际 [UNKNOWN]）：
+  - bb `m_weibo/search` "大模型 风控" → 16 条，adapter 1.15 秒；看过的前 6 条里有 4 条以 "...全文" 截断。
+  - bb `weibo/post` 5270271187749886（搜索结果里被截断的一条）→ 全文，`is_long_text: true`，adapter 0.47 秒。
+  - bb `m_weibo/comments` 5270271187749886 → 18 条，点赞数正常。
+  - bb `weibo/comments` 5270271187749886 5 → 20 条，has_more true，`likes_count` 全是 0。
+  - anysearch `weibo` "大模型 风控" → 5 条，1.9 秒，全部不相关，都是当天的帖子。
+- 2026-09-27（冒烟测试）：
+  - bb `m_weibo/search "Claude Code Skills" 1` → 16 条，12/16 以 "...全文" 截断，adapter 1.39 秒 / 实际 42 秒。
+  - bb `weibo/post 5313304350428303`（id 直接取自上面的搜索结果）→ `is_long_text: true`，全文 1,851 字，adapter 0.51 秒 / 实际 5 秒。

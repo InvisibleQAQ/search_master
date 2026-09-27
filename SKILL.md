@@ -23,6 +23,7 @@ description: Picks the best-verified search or reading tool on this machine for 
 ```text
 你是 search-master 的搜索子 agent：直接调工具，不要再派子 agent。
 任务：<子问题；用户给的约束：时间范围、语言、条数、要不要原文>
+线索：<已知的术语、人名、链接；滚雪球时是上一轮交回的新线索；没有写"无">
 平台：<平台列表>
 先读 C:/Users/18368/Desktop/00_myCode/43_search_master/references/rules.md（工具通则、硬规则、静默失败检查），
 再读 C:/Users/18368/Desktop/00_myCode/43_search_master/references/<路由表里对应的 reference，可能不止一个>，照里面的命令调。
@@ -36,27 +37,27 @@ MCP 工具第一次用之前，先 ToolSearch "select:<工具名>" 加载；用 
 
 ## 路由表
 
-| 平台 / 需求 | 首选（细节和备选见 reference） | reference |
+| 平台 / 需求 | 用哪些工具（命令、备选、坑见 reference） | reference |
 |---|---|---|
-| 中文网页 | anysearch `search` | web.md |
-| 英文网页、"找一篇讲 X 的文章" | exa `web_search_exa` | web.md |
-| 当天新闻 | 英文用 exa + `category:news`；中文用 anysearch | web.md |
-| Google / Bing / DDG 结果页 | BrowserOS neo `run`（不用百度） | web.md |
-| 给一个 URL 拿正文 | exa fetch、anysearch `extract`、neo 按站点类型选一个先读，成功就停，不要三个都调 | read-url.md |
-| 论文发现、论文全文 | 按主题找用 exa；已知标题用 anysearch `academic.search` 精确查（用关键词查会静默返回无关论文）；全文用 exa fetch | academic.md |
-| 知乎 | bb `zhihu/search`（带赞同数和时间，只有摘要），挑几篇用 bb eval 读全文 | zhihu.md |
-| 小红书 | neo `run` 读页面 store（搜索、笔记、评论）；要排序时用 bb | xiaohongshu.md |
-| 微博 | bb `m_weibo/search`，长文用 `weibo/post` | weibo.md |
-| 微信公众号 | feedgrab `mpweixin-so`；读链接用 exa fetch | wechat.md |
-| X / Twitter | bb（搜索、看最新、读帖子），不用 anysearch；bb 读不到（发串帖的账号主页、互动数）或用不了时用 neo | x.md |
-| Reddit | bb `reddit/search` + `reddit/thread`，不用 anysearch | reddit.md |
-| HN、Stack Overflow、V2EX、Linux.do | HN 用 Algolia 接口；SO 用 exa 提问；V2EX 只用 neo（搜索开 Google `site:v2ex.com`，热门、读帖开官方 API 和帖子页）；Linux.do 只用 neo 在 linux.do 页面里同源 fetch 接口（neo 里已登录） | dev-community.md |
-| B站（含字幕） | bb；字幕用 `scripts/bili_subtitle.sh` | bilibili.md |
-| YouTube（含字幕） | bb（tab 开在 watch 页）；字幕用 yt-dlp | youtube.md |
-| GitHub、代码用法、库文档、npm / PyPI | 找仓库用 gh（描述先压成 2–3 个关键词）；问仓库用 deepwiki；在仓库里找代码先浅 clone 到原文目录，再用 semble 搜本地路径；库文档用 context7 | github-code.md |
-| 人物、公司、脉脉、牛客、招聘 | exa `category:people` / `company`；脉脉、牛客用 neo | people-company.md |
-| 行情、CVE、临床试验、专利、法律 | anysearch 垂直搜索；A 股行情用 bb 雪球，美股也可以用雪球（走国内网络，代理断了照常） | data-verticals.md |
+| 中文网页 | anysearch | web.md |
+| 英文网页、"找一篇讲 X 的文章" | exa | web.md |
+| 当天新闻 | 英文 exa，中文 anysearch | web.md |
+| Google / Bing / DDG 结果页 | neo | web.md |
+| 给一个 URL 拿正文 | exa、anysearch、neo（按站点类型选一个） | read-url.md |
+| 论文发现、论文全文 | exa、anysearch（最新预印本用 bb，被引数用 neo） | academic.md |
+| 知乎 | bb | zhihu.md |
+| 小红书 | neo（要排序时用 bb） | xiaohongshu.md |
+| 微博 | bb | weibo.md |
+| 微信公众号 | feedgrab、exa、bb | wechat.md |
+| X / Twitter | bb，读不到用 neo | x.md |
+| Reddit | bb | reddit.md |
+| HN、Stack Overflow、V2EX、Linux.do | HN 用 anysearch、bb；SO 用 exa、bb；V2EX、Linux.do 只用 neo | dev-community.md |
+| B站（含字幕） | bb | bilibili.md |
+| YouTube（含字幕） | bb、yt-dlp | youtube.md |
+| GitHub、代码用法、库文档、npm / PyPI | gh、deepwiki、semble、context7（npm / PyPI 用 bb） | github-code.md |
+| 人物、公司、脉脉、牛客、招聘 | exa、anysearch；脉脉、牛客用 neo | people-company.md |
+| 行情、CVE、临床试验、专利、法律 | anysearch；A 股、美股行情用 bb | data-verticals.md |
 | 我收藏过什么 | favbase | personal.md |
-| 本机网络坏了 | 搜索用 WebSearch；读网页用 neo（代理上游断了时境外站也打不开，国内站照常；WebFetch 能不能用 [UNKNOWN]） | web.md 最后一节 |
+| 本机网络坏了 | WebSearch、neo | web.md 最后一节 |
 
-reference 列的文件都在 `C:/Users/18368/Desktop/00_myCode/43_search_master/references/`；skill 加载时给出的 Base directory 是链接路径，提示里一律写这个完整路径。工具通则、硬规则、静默失败检查、结论标记在 `references/rules.md`，给搜索子 agent 读。
+reference 列的文件都在 `C:/Users/18368/Desktop/00_myCode/43_search_master/references/`；skill 加载时给出的 Base directory 是链接路径，提示里一律写这个完整路径。

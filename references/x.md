@@ -31,7 +31,7 @@ bash C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/bb.sh twitter/thr
 bash C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/bb.sh twitter/tweets yan5xu 20
 ```
 
-X 高级语法 `from:`、`since:`、`min_faves:`、`lang:` 在 bb 里生效 [旧测]（`from:` 2026-09-27 也跑过 [实测]）；`until:` 没测过 [UNKNOWN]。
+多词关键词加双引号做短语匹配（上面第一条命令的写法，2026-09-24 调研推荐配 `top` 用）[旧测]。X 高级语法 `from:`、`since:`、`min_faves:`、`lang:` 在 bb 里生效 [旧测]（`from:` 2026-09-27 也跑过 [实测]）；`until:` 没测过 [UNKNOWN]。
 
 ## 命令：neo（bb 读不到时）
 

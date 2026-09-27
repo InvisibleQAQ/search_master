@@ -8,26 +8,27 @@ bb-browser 私有 adapter：`~/.bb-browser/sites` 是指向本仓库 `adapters/`
 
 ## 结构
 
-- `SKILL.md`：入口，只放主 agent 要看的："谁来搜"（主 agent 只派搜索子 agent，不自己调工具）和派子 agent 的提示模板、路由表（平台 → 首选工具 → reference）。控制在 100 行以内，现在 62 行。
-- `references/rules.md`：给搜索子 agent 的通用规则（路径、工具通则、硬规则、静默失败检查、结论标记）。原来是 `SKILL.md` 的后半，2026-09-27 挪出：主 agent 不调工具，用不到这些，放在 `SKILL.md` 里每次触发都白读。提示模板让子 agent 先读它、再读平台 reference；各平台 reference 说的"网络""时间""硬规则"都指这个文件。跨平台通用的规则只写在这里，不要抄进平台 reference。
+- `SKILL.md`：入口，只放主 agent 要看的："谁来搜"（主 agent 只派搜索子 agent，不自己调工具）和派子 agent 的提示模板、路由表（平台 → 用哪些工具 → reference，只写工具名）。控制在 100 行以内，现在 63 行。
+- `references/rules.md`：给搜索子 agent 的通用规则（路径、工具通则（含 anysearch、exa 和社交平台的查询写法）、硬规则、静默失败检查、结论标记）。原来是 `SKILL.md` 的后半，2026-09-27 挪出：主 agent 不调工具，用不到这些，放在 `SKILL.md` 里每次触发都白读。提示模板让子 agent 先读它、再读平台 reference；各平台 reference 说的"网络""时间""硬规则"都指这个文件。跨平台通用的规则只写在这里，不要抄进平台 reference。
 - `references/<平台>.md`：每个平台一个文件，统一结构：路由表（需求 | 首选 | 备选 | 别用）→ 命令 → 返回什么 → 坑 → 本次验证。每个文件 200 行以内。
 - `references/read-url.md`：给一个 URL 拿正文，以及"读不到就交给 neo"：什么算读不到、neo 的读取脚本、返回格式。各平台 reference 读全文失败时都落到这里。原来在 `web.md` 里，因为 `web.md` 到了 200 行上限才拆出来。
 - `references/workflow.md`：多源搜索流程（来源层、深度档位、五步里主 agent 和子 agent 的分工、bb 和 neo 的并发限制）。
 - `scripts/bb.sh`：bb-browser 的唯一入口。有两种模式（adapter 和 eval），负责开和关自己的 tab、等页面加载、加全局锁、拒绝写操作。
 - `scripts/bili_subtitle.sh`：B站字幕。通过 `bb.sh eval` 执行，不自己管 tab。
 - `adapters/<平台>/<命令>.js`：bb-browser 私有 adapter，覆盖社区同名 adapter 或补新命令，通过上面的 junction 生效。现有 `zhihu/hot`（ID 改从字符串字段取，修 19 位 ID 精度丢失）、`youtube/video`（页面变量缺失或不属于这个视频时，在页面里重拉 watch 页 HTML 解析；修 YouTube service worker 用缓存的 app shell 顶替 watch 页后只剩 9 个字段）。
-- `scripts/notify.py`：用 Server酱 推送提醒到用户手机，要用户动手时用（在 neo 里登录、过验证、启动 neo）。SendKey 从 `%USERPROFILE%\.codex\serverchan-notifier.env` 读（一行 `SERVERCHAN_SENDKEY=<key>`，带不带 BOM 都行），不进仓库。网络错误（含读响应时断开）重试 2 次，仍失败就输出一行 `{"ok": false, ...}`。
+- `scripts/notify.py`：用 Server酱 推送提醒到用户手机，要用户动手时用（在 neo 里登录、过验证、启动 neo）。SendKey 从 `%USERPROFILE%\.codex\serverchan-notifier.env` 读（一行 `SERVERCHAN_SENDKEY=<key>`，带不带 BOM 都行），不进仓库。网络错误（含读响应时断开）重试 2 次，仍失败就输出一行 `{"ok": false, ...}`。第一个参数是 `-h` / `--help` 时只打印用法、不推送（以前会把 "--help" 当标题推出去）。不要改用 argparse：正文是 Markdown，以 `-h` 开头的正文（如 `-https://...`）会被它当成帮助参数，不推送还退出 0 [实测]。
 - `evals/routing/`：description 的路由测试。`cases.json` 是 39 条用户消息和期望的第一个动作（`search-master`、相邻的 skill 或 `NONE`），`skills.txt` 是本机 skill 列表（名称 + description）的快照，`route_eval.py` 生成评判提示、给评判结果打分。用法见"重新验证"。
 
 ## 约定
 
 - 提示模板和交回格式只写在 `SKILL.md`，`workflow.md` 引用它，不要再抄一份。
+- 查询怎么写（工具语法、关键词风格）只写在 `rules.md` 和平台 reference。`SKILL.md`、`workflow.md` 是主 agent 读的，子 agent 看不到；主 agent 只给子问题、约束和线索，不写工具语法。2026-09-27 以前 `workflow.md` 第 1 步有一份按工具写查询的说明，子 agent 从来读不到，已挪走。
 - 新脚本凡是要开 bb-browser tab，一律调用 `bb.sh eval`，不要再写一份开 tab、等加载、关 tab 的代码。
 - 结论要带标记：[实测]、[旧测]、[源码]、[推断]、[UNKNOWN]。改路由必须有实测证据，并写进对应文件的"本次验证"。
 - reference 里 bb 的耗时写两个数："adapter X 秒 / 实际 Y 秒"。adapter 耗时取 bb.sh stderr 那一行，实际等待含全局锁排队、开 tab、`BB_SETTLE`，两者能差出几十秒，只记前一个会误导。
 - 日期和钟点一律写本机时区（美东；取时间的命令见 `references/rules.md`"工具通则"的"时间"）。子 agent 报的 UTC 时间要先换算。
 - reference 里的命令写完整路径 `C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/...`，方便直接复制。仓库搬家时要全局替换这个路径。
-- 改了某个平台的路由，要同步改 `SKILL.md` 路由表里的那一行。
+- `SKILL.md` 路由表只写工具名：主 agent 不调工具，只靠它知道哪些平台走 bb（共享锁，不拆给多个子 agent）、哪些走 neo（可能要提醒用户登录）。命令、参数、备选、坑、"不用某工具"的决定只写在平台 reference。只有换了某个平台用的工具（比如从 bb 换成 neo），才要同步改 `SKILL.md` 那一行。2026-09-27 以前这一列带着细节，和 reference 重复，每次改路由都要两边同步。
 - 改 frontmatter 的 `description` 前后各跑一次路由测试（`evals/routing/`），候选版本不回退才换。description 是不带引号的 YAML 标量，里面不能出现"冒号+空格"：2026-09-27 写成 `Read-only: for ...` 后 frontmatter 解析失败，Claude Code 技能列表里的 description 只剩标题"Search Master" [实测]。`route_eval.py prompt` 会拦住这种写法。
 - 修社区 adapter 或写新 adapter，一律放 `adapters/`，不要改 `~/.bb-browser/bb-sites`：那是社区仓库的 git clone，bb-browser 每次运行都会在后台 `git pull --ff-only`，本地改动要么挡住更新，要么被覆盖。覆盖社区版时在 `@meta` 的 `description` 里写清改了什么；社区版之后修好了，就删掉私有版。
 - 密钥（Server酱 SendKey 等）只放在仓库外的文件里，脚本运行时读取。仓库有 GitHub 远程，任何文件里都不能出现 key。
@@ -38,6 +39,13 @@ bb-browser 私有 adapter：`~/.bb-browser/sites` 是指向本仓库 `adapters/`
 工具和网站都会变，每隔一段时间要重测一次：按平台分组开子 agent，每组读自己的 reference，把主路由和备选各跑一次，更新"本次验证"和日期。第一次完整验证是 2026-09-26，由 6 个子 agent 完成；同一天晚上又做了一次维护测试（静态检查、脚本行为、按 SKILL.md 派子 agent 的端到端场景），报告是 `../42_expert/搜索工具调研原始报告/search-master维护测试_2026-09-26.md`。更早的证据也在这个目录。第二次是 2026-09-27：在 Claude Code 里装好后，按 SKILL.md 派 8 个搜索子 agent 做冒烟测试，覆盖路由表所有平台；然后按用户的决定改路由（知乎、Reddit、X 不用 anysearch，V2EX、Linux.do 只用 neo，搜索引擎去掉百度，删掉小宇宙），由 5 个维护子 agent 实测后改 reference。证据只写进了各文件的"本次验证"，没有单独出报告。
 
 路由测试（只在改 `description` 时跑）：`python C:/Users/18368/Desktop/00_myCode/43_search_master/evals/routing/route_eval.py prompt [候选 description 文件] > <临时目录>/prompt.txt`，派 2 个 `general-purpose` 子 agent，提示里只让它读这个文件、交回表格（不告诉它测的是哪个 skill）；表格存成文件后用 `route_eval.py score <文件>` 打分；新旧 description 各跑 2 次。评判子 agent 在本仓库里运行，能看到这个 CLAUDE.md，命中率的绝对值偏乐观，只用来比新旧 [推断]；它的系统提示里还带着 SKILL.md 当前的 description，测候选时两者不一致，所以候选写进 SKILL.md 之后要再跑一次作为最终验证。第一次是 2026-09-27（按 yao-meta-skill 做优化时）：旧 description 在基础 25 条上 25/25，在困难 14 条上 13/14（两次结果一样），错的是"帮我读一下这篇文章讲了什么 <URL>"被 browseros-neo 抢走，因为 neo 的 description 写着 any task that touches a website (open, read …)，而旧 description 没提"读给定链接"。补上"读给定 URL、文章、视频"和"发帖、点赞、登录、截图、存页面交给 browseros-neo"后，合并成 39 条跑 2 次都是 39/39，截图、存 PDF、点赞、发帖仍然交给 neo [实测]。用户点名搜索工具时（"用 exa 搜…"），评判选择直接调工具、不进 skill，`cases.json` 里这类用例的期望写成 `search-master|NONE`。
+
+yao-meta-skill 的检查脚本：`yao.py` 在 Windows 上跑不了（`evidence_store.py` 要 `fcntl`），直接跑它 `scripts/` 下的 `lint_skill.py`、`validate_skill.py`、`context_sizer.py`、`resource_boundary_check.py`、`governance_check.py`、`trust_check.py`，参数是本仓库路径；`trust_check.py` 要加 `--output-json`、`--output-md` 指到临时目录，不加就在本仓库建 `reports/`。2026-09-27 第二次按 yao 优化（第一次是上面的 description）：把"按工具写查询"从 `workflow.md` 挪到 `rules.md` 和 `x.md`，提示模板加"线索"行，`SKILL.md` 路由表压成只写工具名（用户选的），`notify.py` 加 `--help`。改完按新模板派 1 个子 agent 查 Python 3.14.0 的发布日期做冒烟测试：它写 exa、anysearch 的 query 时引用的正是 `rules.md` 新加的两条，交回格式完整 [实测]。description 没改，没跑路由测试。下面这些检查结果是预期的，不要为了过检查去改：
+- 缺 `agents/interface.yaml`、`manifest.json`：yao 自己打包、治理用的格式，Claude Code 和 Codex 都不读；本仓库经 junction 安装，不打包。
+- 初始加载预算（production 档 1000 token）：压路由表前 1027 超了、压完 862 过了，但 yao 按"字符数 / 4"估算 [源码]，对中文明显偏低，这个数不能当依据。
+- `scripts/`、`evals/` 没在 `SKILL.md` 里引用：脚本由 reference 引用，evals 给维护者用，故意不引。
+- `trust_check` 报 `notify.py` 没有 argparse：故意不用，原因见"结构"里 `notify.py` 那条。它还把 `notify.py` 判成不联网（实际用 urllib 调 Server酱），检测有漏报。
+- yao 的 `trigger_eval.py` 按词重叠打分，路由测试用本仓库的 `route_eval.py`（LLM 评判），不换。
 
 ## 已知待办
 

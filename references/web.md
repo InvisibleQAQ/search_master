@@ -174,3 +174,4 @@ return out;
 - 09-26：exa 调用 14 次，8 次 fetch failed；anysearch 8 次，3 次 fetch failed（`get_sub_domains` 连续 3 次）。全部是网络原因。[实测]
 - 09-26 晚上（维护测试）：exa、anysearch 大部分调用前 1–3 次 `fetch failed`，每次约 47–57 秒；exa fetch 连续 3 次失败，隔约 9 分钟第 4 次成功。同时段 curl 百度 200（0.09s），api.exa.ai 12s 超时。[实测]
 - 09-27：见上面"坑"的前三条。MCP 每次 fetch failed 约 45–55s，断网时三个并行调用一批约 60–78s。[实测]
+- 09-27 11:20–11:23（冒烟测试）：exa fetch 前两次 fetch failed（约 44s、66s），第 3 次成功；第 3 次进行中的 11:22 跑自检，curl api.exa.ai（环境变量代理）和经 7890 访问 google 都是 000（12s 超时）[实测]。exa MCP 可能不走这两条代理，也可能只是网络时好时坏 [推断，只有这一个数据点]，上面"MCP 走不走这条路"仍是 [UNKNOWN]。

@@ -14,8 +14,9 @@ skill 加载时给出的 Base directory 是链接路径（如 `~/.claude/skills/
   - 参数只能按 adapter @meta 的顺序写成位置参数（`--count 5` 会错位）；要跳过中间的参数，就填它的默认值。
   - 环境变量：`BB_OPEN_URL` 改开 tab 的地址；`BB_SETTLE` 设加载后的等待秒数（小红书用 6，YouTube 用 8）。
   - 输出位置：reddit、hackernews 的数据在 `.result.data.*`，其他 adapter 在 `.result.*`；出错时是 `{"error": ...}`。stderr 另有一行 `[bb.sh] ... rc= 耗时`，耗时只算 adapter / eval 本身；实际等待多出 5–60 秒（全局锁排队、开 tab、`BB_SETTLE`），reference 里写成"adapter X 秒 / 实际 Y 秒"。存 JSON 时只重定向 stdout，别用 `2>&1`。
-- **anysearch 垂直搜索**：先调 `get_sub_domains`，它失败而参数已知时可以直接调。`keyword` 和 `query` 填同一个字符串。垂直搜索会悄悄退回通用搜索，拿到结果先看 URL 是不是目标站点。`max_results` 要设小，单条结果可能有几千字。
-- **exa**：分类直接写在 query 里；5 条结果常有 1–2 万字；fetch 只读缓存，可能拿到旧版本。
+- **anysearch**：通用搜索一条 query 只放一个意图，不写 `site:` 和域名（结果会变成垃圾，见 `web.md`）；中英文话题各搜一份。垂直搜索先调 `get_sub_domains`，它失败而参数已知时可以直接调。`keyword` 和 `query` 填同一个字符串。垂直搜索会悄悄退回通用搜索，拿到结果先看 URL 是不是目标站点。`max_results` 要设小，单条结果可能有几千字。
+- **exa**：query 写成对理想页面的一句描述，分类（`category:news|company|people|publication|personal site`）直接写在 query 里；5 条结果常有 1–2 万字；fetch 只读缓存，可能拿到旧版本。
+- **小红书、微博、B站的关键词**：用普通人的说法，不用行业术语。
 - **BrowserOS neo**：先用 Skill 工具加载 browseros-neo；调用 `name_session`，只用自己开的 tab，读完就关（本 skill 的规定优先于 browseros-neo skill 的"保留页面"；同一任务里可以跨几次 `run` 复用自己的 tab，任务结束前关掉），只有等用户登录或过验证的 tab 留着；单次 `run` 最长 30 秒；`browser.evaluate` 返回 `{page, value}`，数据在 `.value`；结果超过约 5,000 字符时改成返回 `{writtenToFile: true, path}`，`.value` 是 undefined 且不报错，要去读 `path`（文件首尾各多一行 `[UNTRUSTED_PAGE_CONTENT ...]` 标记，当 JSON 解析前先去掉）。**别的工具读不到的网页（报错、验证码页、登录框、正文不全），交给 neo 在浏览器里重读**；什么算读不到、脚本、neo 也读不到时怎么办，见 `read-url.md`。要用户登录、过验证或启动 neo 时，用 `scripts/notify.py` 推送提醒，写法也在 `read-url.md`。
 - **网络**：anysearch、exa、context7 走本机代理，常常 `fetch failed`（单次约 45–55 秒才返回，三个并行一批 60–78 秒），gh 也会 TLS 超时，deepwiki 报 `The operation timed out.`，都算网络错误。每次调用失败后原样重试最多 2 次（一共调 3 次），还失败就换：搜索用 WebSearch，读网页用 neo（本机代理的上游节点断了时 neo 也打不开境外站，国内站照常 [实测]）。网络时好时坏，过几分钟再试常常就好了；这个工具本身就是要验证的对象时，隔几分钟再试，别直接换。静默失败（只有标题、验证码页、空正文）不用重试，直接换下一个工具。
 - **时间**：一律写本机时区（Windows 时区 Eastern；2026-09 是 EDT，-04:00）。Git Bash 的 `date` 不认 `$TZ` 里的 IANA 时区名，会输出 UTC；取当前时间用 `TZ=EST5EDT date '+%F %T %z'` 或 Python `datetime.now().astimezone()`，时间戳换算用 Python `datetime.fromtimestamp(ts)`（按本机时区）。

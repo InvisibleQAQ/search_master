@@ -1,14 +1,15 @@
 # GitHub 与代码
 
 > 最后验证：2026-09-26。标记：[实测] 本次跑过；[旧测] 引自 2026-09-24 调研；[UNKNOWN] 没查清。
-> 本机网络不稳：同一分钟内 MCP（anysearch/exa/context7，走 Node fetch）和 gh（走 https_proxy）会各自失败，互不同步。任一工具报 `fetch failed` / `TLS handshake timeout`，先原样重试 1 次，再换下一个工具。
+> 本机网络不稳：同一分钟内 MCP（anysearch/exa/context7，走 Node fetch）和 gh（走 https_proxy）会各自失败，互不同步。任一工具报 `fetch failed` / `TLS handshake timeout`，按 SKILL.md"网络"一条，原样重试最多 2 次（一共调 3 次），再换下一个工具。
 
 | 需求 | 首选 | 备选 | 别用 |
 |---|---|---|---|
 | 找仓库（只有功能描述） | exa `web_search_exa` | anysearch 通用搜索（最后备选） | bb-browser（没有 github 搜索 adapter） |
 | 找仓库（有关键词 / 要按 star 排） | `gh search repos <词1> <词2> --sort stars` | exa | 整句自然语言丢给 gh |
 | 仓库元数据（star、更新时间、issue 数） | `gh api repos/<o>/<r> --jq ...` | anysearch `extract` 读 `api.github.com/repos/<o>/<r>` | bb `github/repo`（字段全 null）；exa fetch（旧快照） |
-| issue 列表 | bb `github/issues` [旧测] | `gh api repos/<o>/<r>/issues` [UNKNOWN 未测] | — |
+| issue 列表 | `gh api --paginate repos/<o>/<r>/issues`（能翻页，`.pull_request` 过滤掉 PR）[实测] | bb `github/issues`（固定 30 条，不能翻页）[实测] | — |
+| 最新版本 / 发布日期 | `npm view <pkg> version time --json`（npm 包）；`gh api repos/<o>/<r>/tags` [实测] | `gh api repos/<o>/<r>/releases/latest` | 只看 `releases/latest`（可能落后很多版）[实测] |
 | 读 README | anysearch `extract` 读 raw URL | exa fetch（可能是旧缓存） | bb `github/repo`（不返回 README） |
 | 理解仓库架构 | deepwiki `ask_wiki_question` | semble 搜远程仓库（定位到文件行） | — |
 | 找代码真实用法（跨仓库） | `gh search code` | anysearch `code.snippet`（带行号和固定到 commit 的链接，一个文件里的多处命中聚在一条）[实测] | — |
@@ -49,20 +50,28 @@ gh 不可用时（anysearch MCP）：
 ```json
 {"url": "https://api.github.com/repos/epiral/bb-browser"}
 ```
-issue 列表（Git Bash；repo 是位置参数）：
+issue 列表（自动翻页；`is_pr` 用来区分 PR）：
 ```bash
-bash C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/bb.sh github/issues epiral/bb-browser
+gh api --paginate 'repos/epiral/bb-browser/issues?state=open&per_page=100' --jq '.[] | {number,title,is_pr:(.pull_request!=null),comments,created_at,labels:[.labels[].name]}'
+```
+最新版本：三个口径可能对不上，都查：
+```bash
+npm view bb-browser version time --json      # 用户实际装到的版本（慢，约 25 秒）
+gh api 'repos/epiral/bb-browser/tags?per_page=5' --jq '.[].name'
+gh api repos/epiral/bb-browser/releases/latest --jq '{tag_name,published_at}'
 ```
 ### 返回什么
 - gh api：一行干净 JSON，约 1 秒。[实测]
 - anysearch extract：GitHub API 原样 JSON，数值和 gh 一致（stars 6232），但约 7k 字里大半是 `*_url` 样板。[实测]
+- gh api issues：83 条（62 issue + 21 PR）一次拿全，985ms。[实测]
 - bb `github/issues`：30 条（number、title、state、labels、comments、created_at、is_pr）。[旧测]
 ### 坑
 - 看"最近有没有人维护"用 `pushed_at`，不要用 `updated_at`：本次 updated_at=2026-09-25，pushed_at=2026-05-29（被 star 之类的动作刷新）。[实测]
 - `open_issues_count` 包含未关闭的 PR。
 - bb `github/repo` 仍然坏：stars/forks/language/topics 全 null，license 只返回 "LICENSE"，没有 README。[实测]
 - bb `github/repo` 前两次分别报 `Cannot find default execution context`（27s）和 `TypeError: Failed to fetch`，第 3 次才跑通；原因 [UNKNOWN]。[实测]
-- bb `github/issues` 固定 per_page=30，不能翻页。[旧测]
+- bb `github/issues` 固定 per_page=30，不能翻页；本次 2 次都报 `Cannot find default execution context`（排队串行也一样）。[实测]
+- 版本号三个口径可能对不上：bb-browser 的 npm latest 是 0.14.2（2026-05-29），git tag 最新是 v0.14.0，GitHub Releases 最新是 0.11.6（2026-05-11）。只查 `releases/latest` 会得出错误结论。[实测]
 - 只做只读调用：不要跑 `github/fork`、`github/issue-create`、`github/pr-create`、`bb-browser star`，gh 也只用 `gh api`（GET）和 `gh search`。
 
 ## 读 README
@@ -156,7 +165,7 @@ bash C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/bb.sh pypi/packag
 - `npm/search` 第一次报 `Cannot find default execution context`（27s），重试 0.6s 成功。[实测]
 - `pypi/package` 单次 25 秒，慢，原因 [UNKNOWN]。[实测]
 - `pypi/search` 静默返回 `count: 0`：pypi.org 搜索页返回 `<title>Client Challenge</title>`（JS 质询），adapter 不报错。别用。[实测]
-- npm 包详情可试 `npm view <pkg> version description repository --json`，PyPI 可试 anysearch `extract` 读 `https://pypi.org/pypi/<name>/json`：都 [UNKNOWN 未测]。
+- npm 包详情用 `npm view <pkg> version time dist-tags repository.url --json`：能用，但慢（23–29 秒）[实测]。PyPI 可试 anysearch `extract` 读 `https://pypi.org/pypi/<name>/json` [UNKNOWN 未测]。
 
 ## 本次验证
 - exa 搜仓库，第 1 次 `fetch failed`，重试 → 5 条全是 GitHub 仓库，无 star，bb-browser 不在前 5，1 条镜像域名。
@@ -178,3 +187,4 @@ bash C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/bb.sh pypi/packag
 - bb `npm/search playwright 5`：第 1 次 execution context 错误 27.7s，重试 0.62s → 5 条，version 全 null。
 - bb `pypi/package requests` → 成功 25.3s。
 - bb `pypi/search playwright` → 0.52s，`count: 0`；curl 搜索页 200，标题 `Client Challenge`。
+- 维护测试（同日晚些时候，bb-browser 现状调研）：`gh api --paginate .../issues?state=open&per_page=100` → 83 条，985ms；bb `github/issues epiral/bb-browser` 2 次 `Cannot find default execution context`（脚本自报 1.9s，总耗时 30.7s）；`npm view bb-browser version time --json` 23.0s、`dist-tags repository.url` 29.0s；`gh api` 间歇 `TLS handshake timeout`（每次 10s），重试后成功。[实测]

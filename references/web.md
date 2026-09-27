@@ -144,18 +144,20 @@ Bing 的选择器是 `#b_results > li.b_algo h2 a`。它的链接是 `/ck/a?...&
 
 | 需求 | 首选 | 备选 | 别用 |
 |---|---|---|---|
-| anysearch / exa 连续 fetch failed | 搜索用 WebSearch（在 Anthropic 服务端执行）；读正文用 neo（Chrome 走自己的网络，给原文，脚本见 `read-url.md`） | 搜索用 neo 跑搜索引擎结果页；读正文用 WebFetch（neo 没连上时用；会转述） | 继续重试 exa / anysearch |
+| anysearch / exa 连续 fetch failed | 搜索用 WebSearch（在 Anthropic 服务端执行）；读正文用 neo（给原文；代理上游节点断了时 neo 也打不开，见下面"坑"，脚本见 `read-url.md`） | 搜索用 neo 跑搜索引擎结果页；读正文用 WebFetch（neo 没连上时用；会转述） | 继续重试 exa / anysearch |
 
 ### 判断
 - 网络问题：anysearch 报 `fetch failed`，exa 报 `web_search_exa error: fetch failed`。
 - 工具问题：anysearch 报 `extract_failed`；exa 报 `CRAWL_UNKNOWN_ERROR` / `SOURCE_NOT_AVAILABLE`；或者返回的是验证码页。重试没用，直接换工具。
-- 快速自检（Git Bash）：`curl -s -o /dev/null -m 12 -w "%{http_code} %{time_total}\n" https://www.baidu.com`。如果连百度都超时，说明是本机出口坏了，不是某个服务的问题。
+- 快速自检（Git Bash）：`curl -s -o /dev/null -m 12 -w "%{http_code} %{time_total}\n" https://www.baidu.com`。如果连百度都超时，说明是本机出口坏了，不是某个服务的问题。百度正常、`api.exa.ai` / `api.anysearch.com` 超时，是代理出口不通，同样按下面的规则切换。[实测]
+- anysearch 还会报 `Service temporarily unavailable`，按网络问题处理，重试。[实测]
 
 ### 规则
-- fetch failed 最多重试 2 次。还失败就切换：搜索用 WebSearch，读正文用 neo，不要再等。
-- 网络故障往往一整段时间都在失败（本次持续了几分钟），不是偶发的一两次。
+- 每次调用 fetch failed 后原样重试最多 2 次（一共调 3 次）。还失败就切换：搜索用 WebSearch，读正文用 neo，不要再等。
+- 网络故障往往一整段时间都在失败（本次持续了几分钟），之后又时好时坏：连续重试常常都失败，隔几分钟再试才成功。被验证的就是这个工具时，隔几分钟再试，别直接换。
 
 ### 坑
+- neo 不一定能兜底：2026-09-27 本机代理的上游节点断网约 31 分钟，期间 bb、anysearch、neo 全部失败，只有百度正常。neo 和系统代理可能走同一个上游 [推断]。这时只剩 WebSearch / WebFetch（在服务端执行）。
 - WebSearch 标注为 US-only，只返回链接和模型写的摘要，没有原始片段；不过本次中文 query 也给了 9 条相关结果。
 - WebFetch 会转述：让它逐字给出 arXiv 摘要，它从第二句起还是改写了，需要原文时用 neo。读知乎返回 403 [旧测]；不能访问需要登录的页面和 localhost。
 
@@ -165,3 +167,4 @@ Bing 的选择器是 `#b_results > li.b_algo h2 a`。它的链接是 `/ck/a?...&
 - 13:35 在 Git Bash 里经环境变量代理 curl：api.exa.ai、api.anysearch.com、export.arxiv.org、www.baidu.com 全部 12s 超时。说明是本机出口整体不通，不是哪个服务坏了。[实测]
 - 同一时段 neo 打开 Google Scholar 和 arXiv 都成功，WebSearch / WebFetch 也成功。约 13:39 之后 MCP 恢复。[实测]
 - 单次失败要等多久，这次没测准 [UNKNOWN]；09-24 测到的是约 10.6s [旧测]。
+- 晚上（维护测试）：exa、anysearch 大部分调用前 1–3 次 `fetch failed`，每次约 47–57 秒才返回；exa fetch 连续 3 次失败，隔约 9 分钟第 4 次成功。同时段 curl 百度 200（0.09s），api.exa.ai 12s 超时。[实测]

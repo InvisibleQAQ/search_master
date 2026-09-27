@@ -26,12 +26,12 @@ description: Picks the best-verified search or reading tool on this machine for 
 平台：<平台列表>
 先读 C:/Users/18368/Desktop/00_myCode/43_search_master/SKILL.md 的"工具通则""硬规则""静默失败检查"，
 再读 C:/Users/18368/Desktop/00_myCode/43_search_master/references/<路由表里对应的 reference，可能不止一个>，照里面的命令调。
-MCP 工具第一次用之前，先 ToolSearch "select:<工具名>" 加载。
+MCP 工具第一次用之前，先 ToolSearch "select:<工具名>" 加载；用 neo 之前，先用 Skill 工具加载 browseros-neo。
 交回（不要贴原始结果）：
 1. 每条一行：结论 | URL | 来源平台 | 日期 | 是否读过全文
 2. 失败的工具：报错的、静默失败的（退回通用搜索、验证码页等），各写一句原因；要用户动手的单独列出（neo 里要登录或过验证的网址、neo 没启动）
 3. 新线索：结果里出现的新人名、术语、链接
-要原文（字幕、全文）时写进文件，只交回绝对路径和摘要；用户没指定位置就放 C:/Users/18368/AppData/Local/Temp/search-master/。
+要原文（字幕、全文）时写进文件，只交回绝对路径和摘要；exa、anysearch 的返回只在你的上下文里，要原文就把正文原样写进文件（只写原文，不写报告）。用户没指定位置就放 C:/Users/18368/AppData/Local/Temp/search-master/<任务名>/，不同任务不共用目录。
 ```
 
 ## 路由表
@@ -45,12 +45,12 @@ MCP 工具第一次用之前，先 ToolSearch "select:<工具名>" 加载。
 | 给一个 URL 拿正文 | 普通文章用 exa fetch；要最新内容或 JSON 用 anysearch `extract`；读不到的一律交给 neo | read-url.md |
 | 论文发现、论文全文 | anysearch `academic.search` 和 exa 并行；PDF 用 exa fetch | academic.md |
 | 知乎 | anysearch `zhihu` 类型（结果就是全文）；读指定一篇用 bb eval | zhihu.md |
-| 小红书 | 只有 bb：`search` / `note` / `comments` | xiaohongshu.md |
+| 小红书 | neo `run` 读页面 store（搜索、笔记、评论）；要排序时用 bb | xiaohongshu.md |
 | 微博 | bb `m_weibo/search`，长文用 `weibo/post` | weibo.md |
 | 微信公众号 | feedgrab `mpweixin-so`；读链接用 exa fetch | wechat.md |
-| X / Twitter | 搜索：bb top 和 anysearch `x_top` 并行；看最新、读帖子：只用 bb | x.md |
+| X / Twitter | 搜索：bb top 和 anysearch `x_top` 并行；看最新、读帖子：bb；bb 读不到的（发串帖的账号主页）用 neo | x.md |
 | Reddit | bb `reddit/search` + `reddit/thread` | reddit.md |
-| HN、Stack Overflow、V2EX、Linux.do | HN 用 Algolia 接口；SO 用 exa 提问；V2EX 用 anysearch | dev-community.md |
+| HN、Stack Overflow、V2EX、Linux.do | HN 用 Algolia 接口；SO 用 exa 提问；V2EX 用 anysearch；Linux.do 读帖用 bb，搜索用 neo（需登录） | dev-community.md |
 | B站（含字幕） | bb；字幕用 `scripts/bili_subtitle.sh` | bilibili.md |
 | YouTube（含字幕） | bb（tab 开在 watch 页）；字幕用 yt-dlp | youtube.md |
 | 小宇宙播客 | bb `xiaoyuzhoufm/*` | podcast.md |
@@ -69,11 +69,11 @@ reference 都在 `references/` 目录下。下文的 `scripts/` 指本 skill 目
   - 脚本会自己开 tab、等页面加载、跑完关 tab；自带全局锁，多个调用自动排队；写操作 adapter 一律拒绝。
   - 参数只能按 adapter @meta 的顺序写成位置参数（`--count 5` 会错位）；要跳过中间的参数，就填它的默认值。
   - 环境变量：`BB_OPEN_URL` 改开 tab 的地址；`BB_SETTLE` 设加载后的等待秒数（小红书、Linux.do 用 6，YouTube 用 8）。
-  - 输出位置：reddit、hackernews 的数据在 `.result.data.*`，其他 adapter 在 `.result.*`；出错时是 `{"error": ...}`。
+  - 输出位置：reddit、hackernews 的数据在 `.result.data.*`，其他 adapter 在 `.result.*`；出错时是 `{"error": ...}`。stderr 另有一行 `[bb.sh] ... rc= 耗时`，耗时只算 adapter / eval 本身，不含排队、开 tab；存 JSON 时只重定向 stdout，别用 `2>&1`。
 - **anysearch 垂直搜索**：先调 `get_sub_domains`，它失败而参数已知时可以直接调。`keyword` 和 `query` 填同一个字符串。垂直搜索会悄悄退回通用搜索，拿到结果先看 URL 是不是目标站点。`max_results` 要设小，单条结果可能有几千字。
 - **exa**：分类直接写在 query 里；5 条结果常有 1–2 万字；fetch 只读缓存，可能拿到旧版本。
-- **BrowserOS neo**：先读 browseros-neo skill；调用 `name_session`，只用自己开的 tab；单次 `run` 最长 30 秒；`browser.evaluate` 返回 `{page, value}`，数据在 `.value`。**别的工具读不到的网页（报错、验证码页、登录框、正文不全），交给 neo 在浏览器里重读**；什么算读不到、脚本、neo 也读不到时怎么办，见 `read-url.md`。要用户登录、过验证或启动 neo 时，用 `scripts/notify.py` 推送提醒，写法也在 `read-url.md`。
-- **网络**：anysearch、exa、context7 走本机代理，常常整段时间 `fetch failed`。重试最多 2 次，还失败就换：搜索用 WebSearch，读网页用 neo。
+- **BrowserOS neo**：先用 Skill 工具加载 browseros-neo；调用 `name_session`，只用自己开的 tab，读完就关（本 skill 的规定优先于 browseros-neo skill 的"保留页面"），只有等用户登录或过验证的 tab 留着；单次 `run` 最长 30 秒；`browser.evaluate` 返回 `{page, value}`，数据在 `.value`；结果超过约 5,000 字符时改成返回 `{writtenToFile: true, path}`，`.value` 是 undefined 且不报错，要去读 `path`。**别的工具读不到的网页（报错、验证码页、登录框、正文不全），交给 neo 在浏览器里重读**；什么算读不到、脚本、neo 也读不到时怎么办，见 `read-url.md`。要用户登录、过验证或启动 neo 时，用 `scripts/notify.py` 推送提醒，写法也在 `read-url.md`。
+- **网络**：anysearch、exa、context7 走本机代理，常常 `fetch failed`（每次约 10–50 秒才返回），gh 也会 TLS 超时。每次调用失败后原样重试最多 2 次（一共调 3 次），还失败就换：搜索用 WebSearch，读网页用 neo（本机代理的上游节点断了时 neo 也打不开 [推断]）。网络时好时坏，过几分钟再试常常就好了；这个工具本身就是要验证的对象时，隔几分钟再试，别直接换。
 
 ## 硬规则
 
@@ -89,10 +89,10 @@ reference 都在 `references/` 目录下。下文的 `scripts/` 指本 skill 目
 
 - 结果 URL 不是目标平台：说明垂直搜索退回了通用搜索。已知会退回的：anysearch 的 4 个 `linkedin_*` 类型、`legal.statute` 查中国法律、`finance.news type=flash`，以及放进 `batch_search` 的 `reddit_post`（出现过 1 次）。
 - 标题或开头是验证码页、人机验证页、登录框或"视频不见了"之类的错误页。
-- 日期不可信：可能是转载日期，也可能是缓存的旧版本。
+- 日期不可信：可能是转载日期，也可能是缓存的旧版本；exa 的 Published 可能是它抓取缓存的日期。
 - 数字不可信：anysearch 摘要会混进页面上的无关文字，exa 的公司数据可能自相矛盾。
 - 结果和查询对不上：例如 anysearch `health.drug` 用中文药名查，返回的是无关的药；只写成分名时，第 1 条可能是复方药。
-- 条数比预期少：例如 bb `zhihu/search` 会过滤掉一部分结果，`pypi/search` 会静默返回 0 条。
+- 条数比预期少：例如 bb `zhihu/search` 会过滤掉一部分结果，`pypi/search` 会静默返回 0 条，`linuxdo/topic` 最多只给 20 楼，V2EX 回复接口可能因缓存返回空数组。
 
 ## 标记
 

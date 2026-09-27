@@ -4,7 +4,7 @@
 
 | 需求 | 首选 | 备选 | 别用 |
 |---|---|---|---|
-| 找节目 / 单集 | exa 或 anysearch 通用搜索"小宇宙 <节目名或话题>"，从结果 URL 里取 pid / eid [UNKNOWN：本次两者都 `fetch failed`，没验证] | WebSearch（服务端执行，不受本机网络影响）[UNKNOWN]；bb `duckduckgo/search "site:xiaoyuzhoufm.com <关键词>"`（走 bb 的 Chrome，和 MCP 网络路径不同）[UNKNOWN] | bb 没有小宇宙搜索 adapter |
+| 找节目 / 单集 | anysearch `search`"小宇宙 <节目名或话题>"，从结果 URL 里取 pid / eid [实测]；exa 同样可以 [实测] | WebSearch（服务端执行，不受本机网络影响；9 条里 7 条是小宇宙）[实测]；bb `duckduckgo/search "site:xiaoyuzhoufm.com <关键词>"`（走 bb 的 Chrome，和 MCP 网络路径不同）[UNKNOWN] | bb 没有小宇宙搜索 adapter |
 | 节目信息 + 最近单集列表 | bb `xiaoyuzhoufm/podcast` [实测] | — | — |
 | 单集元数据 + shownotes | bb `xiaoyuzhoufm/episode` [实测] | feedgrab（shownotes 转 Markdown + 音频 URL）[源码] | — |
 | 单集评论 | eval 读 `_next/data` 的 `pageProps.comments`（见命令）[实测] | — | adapter 只给评论数，不给评论正文 |
@@ -58,3 +58,4 @@ BB_SETTLE=3 bash $S/bb.sh eval "https://www.xiaoyuzhoufm.com/episode/$eid" \
 - eval 读同一集 `_next/data` → `pageProps` 有 `episode / comments / vote`；`episode` 有 `transcript`、`transcriptMediaId`，但 transcript 只是 mediaId 指针；音频是 m4a。
 - eval 取评论（上面的命令原样）→ 20 条热评，文本、点赞、回复数、时间都有。
 - exa `web_search_exa` 搜小宇宙单集 → `fetch failed`，重试 1 次仍失败；anysearch `search` → `fetch failed`。找节目这一格没验证。
+- 维护测试（同日晚些时候）："小宇宙 张小珺商业访谈录"——anysearch `search` max 5 → 第 1 条就是 `xiaoyuzhoufm.com/podcast/626b46ea9cbbf0451cf5a962`，1.0 秒；exa 前 2 次 `fetch failed`，第 3 次 5 条里 2 条是小宇宙（节目页 + 单集 `/episode/695f008dc1e012a7abf0be09`），exa 标的 Published 是缓存日期；WebSearch 9 条里 7 条是小宇宙（节目页 1、单集 5）。bb `duckduckgo/search` 没测 [UNKNOWN]。[实测]

@@ -10,7 +10,7 @@
 - `references/workflow.md`：多源搜索流程（来源层、深度档位、五步里主 agent 和子 agent 的分工、bb 和 neo 的并发限制）。
 - `scripts/bb.sh`：bb-browser 的唯一入口。有两种模式（adapter 和 eval），负责开和关自己的 tab、等页面加载、加全局锁、拒绝写操作。
 - `scripts/bili_subtitle.sh`：B站字幕。通过 `bb.sh eval` 执行，不自己管 tab。
-- `scripts/notify.py`：用 Server酱 推送提醒到用户手机，要用户动手时用（在 neo 里登录、过验证、启动 neo）。SendKey 从 `%USERPROFILE%\.codex\serverchan-notifier.env` 读（一行 `SERVERCHAN_SENDKEY=<key>`），不进仓库。
+- `scripts/notify.py`：用 Server酱 推送提醒到用户手机，要用户动手时用（在 neo 里登录、过验证、启动 neo）。SendKey 从 `%USERPROFILE%\.codex\serverchan-notifier.env` 读（一行 `SERVERCHAN_SENDKEY=<key>`，带不带 BOM 都行），不进仓库。网络错误（含读响应时断开）重试 2 次，仍失败就输出一行 `{"ok": false, ...}`。
 
 ## 约定
 
@@ -24,12 +24,13 @@
 
 ## 重新验证
 
-工具和网站都会变，每隔一段时间要重测一次：按平台分组开子 agent，每组读自己的 reference，把主路由和备选各跑一次，更新"本次验证"和日期。第一次完整验证是 2026-09-26，由 6 个子 agent 完成；更早的证据在 `../42_expert/搜索工具调研原始报告/`。
+工具和网站都会变，每隔一段时间要重测一次：按平台分组开子 agent，每组读自己的 reference，把主路由和备选各跑一次，更新"本次验证"和日期。第一次完整验证是 2026-09-26，由 6 个子 agent 完成；同一天晚上又做了一次维护测试（静态检查、脚本行为、按 SKILL.md 派子 agent 的端到端场景），报告是 `../42_expert/搜索工具调研原始报告/search-master维护测试_2026-09-26.md`。更早的证据也在这个目录。
 
 ## 已知待办
 
 - bb adapter 坏了或有 bug、需要写私有 adapter（放在 `~/.bb-browser/sites/`）的：
   - `twitter/user`：字段全空。
+  - `twitter/tweets`：发串帖的账号返回 0 条（不读置顶帖 `inst.entry` 和串帖模块 `content.items[]`）；twitter 各 adapter 写死的兜底 queryId 已过期，见 `x.md`。
   - `github/repo`：stars 等字段全是 null。
   - `sogou/weixin`：公众号名和时间字段错位。
   - `zhihu/hot`：ID 精度丢失。
@@ -37,8 +38,8 @@
   - `npm/search`：version 为 null。
   - `pypi/search`：静默返回 0 条。
 - B站字幕可以改写成私有 adapter `bilibili/subtitle`，取代 `bili_subtitle.sh`。
-- `Cannot find default execution context` 的根因还没查清，bb.sh 目前用全局锁规避。
+- `Cannot find default execution context` 的根因还没查清。bb.sh 的全局锁只挡住了并发这一个诱因：2026-09-26 晚上网络正常、排队串行时照样出现（`github/issues` 2/2），和站点有关。上游线索：bb-browser issue #41（adapter 报 `Failed to fetch`，同样的 fetch 用 eval 却正常）。`Daemon request timed out` 是另一回事：每次都出现在目标站很慢或代理断网的时候，是 bb daemon 的 30 秒上限，加 `BB_SETTLE` 没用。
 - exa 的 `web_search_advanced_exa` 没开启（能按日期和域名过滤），开启方法见 `../42_expert/搜索工具总览.md` §5.2。
-- neo 读 SPA（load 事件之后才渲染正文）没测过，`read-url.md` 里等选择器的写法是 [UNKNOWN]。
+- neo 读 SPA：小红书、X 用 `browser.wait` 等正文选择器实测可用（超时返回 `{matched: false}`，不报错），其他 SPA 没测。
 - neo `read` 的全文文件存在 BrowserOS 的版本目录下（`BrowserClaw\Application\<版本号>\.browseros\tool-output\`），升级后路径会变。
 - 本机没有 Whisper，也没有 `GROQ_API_KEY`，没有字幕的音视频转不了文字。

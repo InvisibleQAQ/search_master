@@ -53,6 +53,11 @@ def send(title, desp):
 
 
 def main():
+    # 只认第一个参数是 -h / --help：不然会把 "--help" 当标题推到手机上。
+    # 不用 argparse：正文是 Markdown，以 "-h" 开头的正文（如 "-https://..."）会被它当成 -h，不推送还退出 0。
+    if sys.argv[1:2] in (["-h"], ["--help"]):
+        print(__doc__)
+        return 0
     if len(sys.argv) < 2 or not sys.argv[1].strip():
         print('usage: python notify.py "<title>" ["<desp>"]', file=sys.stderr)
         return 2

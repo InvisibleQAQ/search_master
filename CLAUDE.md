@@ -20,7 +20,7 @@
 - reference 里的命令写完整路径 `C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/...`，方便直接复制。仓库搬家时要全局替换这个路径。
 - 改了某个平台的路由，要同步改 `SKILL.md` 路由表里的那一行。
 - 密钥（Server酱 SendKey 等）只放在仓库外的文件里，脚本运行时读取。仓库有 GitHub 远程，任何文件里都不能出现 key。
-- Server酱免费版每天只能推 5 条（sct.ftqq.com 的说明），所以规定一个子 agent 一次任务只推一条。
+- Server酱用的是会员账号，每天 1000 条（用户确认，2026-09-26），额度不是约束。规定一个子 agent 一次任务只推一条，是为了不刷屏。
 
 ## 重新验证
 

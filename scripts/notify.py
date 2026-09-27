@@ -6,8 +6,8 @@
 SendKey 从 %USERPROFILE%\\.codex\\serverchan-notifier.env 读，格式是一行
 SERVERCHAN_SENDKEY=<key>（不带引号）。key 不进仓库，也不打印。
 
-限制：标题最多 32 字、正文最多 32KB，超出的部分截掉；免费版每天只能推 5 条，
-所以一批要处理的网址合成一条推送，不要一个网址推一次。
+限制：标题最多 32 字、正文最多 32KB，超出的部分截掉。用户是会员，每天 1000 条，
+额度够用；但一批要处理的网址仍合成一条推送，不要一个网址推一次，免得刷屏。
 输出：stdout 一行 JSON {"ok", "code", "message"}；推送成功退出码 0，否则 1。
 """
 import json
@@ -33,13 +33,12 @@ def read_sendkey():
 
 
 def send(title, desp):
-    url = "https://sctapi.ftqq.com/%s.send?%s" % (
-        read_sendkey(),
-        urllib.parse.urlencode({"title": title, "desp": desp}),
-    )
+    # 用 POST 表单：放在 GET 的 URL 里，正文十几 KB 起服务端就崩（2026-09-26 实测）
+    url = "https://sctapi.ftqq.com/%s.send" % read_sendkey()
+    data = urllib.parse.urlencode({"title": title, "desp": desp}).encode()
     for attempt in range(RETRIES + 1):
         try:
-            with urllib.request.urlopen(url, timeout=15) as resp:
+            with urllib.request.urlopen(url, data=data, timeout=15) as resp:
                 return json.load(resp)
         except urllib.error.HTTPError as e:  # 服务端回了错误，body 里有 code 和 message
             return json.load(e)
@@ -52,7 +51,7 @@ def main():
     if len(sys.argv) < 2 or not sys.argv[1].strip():
         print('usage: python notify.py "<title>" ["<desp>"]', file=sys.stderr)
         return 2
-    title = sys.argv[1].strip()[:TITLE_MAX]
+    title = " ".join(sys.argv[1].split())[:TITLE_MAX]  # 标题不能带换行
     desp = sys.argv[2] if len(sys.argv) > 2 else ""
     desp = desp.encode("utf-8")[:DESP_MAX_BYTES].decode("utf-8", "ignore")
     try:

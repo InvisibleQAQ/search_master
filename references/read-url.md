@@ -82,7 +82,7 @@ return out;
 - 推送提醒：在 Bash 工具里跑 `python C:/Users/18368/Desktop/00_myCode/43_search_master/scripts/notify.py "<标题>" "<正文>"`。
   - 标题最多 32 字，例如 `search-master：需要你在 neo 里登录`；正文支持 Markdown，写任务是什么、每个网址要登录还是验证、tab 分组。
   - 输出 `{"ok": true, "code": 0, ...}` 才算推送成功；失败了在交回清单里写一句，主 agent 照样会在对话里提醒。
-  - Server酱免费版每天只能推 5 条：一个子 agent 一次任务只推一条，所有网址合在这一条里。重读后还是读不到，不再推送。
+  - 不要刷屏：一个子 agent 一次任务只推一条，所有网址合在这一条里。重读后还是读不到，不再推送。（额度是会员的每天 1000 条，不是瓶颈。）
 - 只关自己开的页面。`browser.pages.list()` 里 `ownership` 不是自己的，一律不碰。
 
 ## 本次验证（2026-09-26）
